@@ -10,9 +10,33 @@ const BENCHMARK = [
 ]
 
 const CLASS_DIST = [
-  { label: 'Neutral',  pct: 40.2, count: '18,318', color: '#94a3b8', bg: 'bg-slate-400'   },
-  { label: 'Positive', pct: 31.3, count: '14,274', color: '#10b981', bg: 'bg-emerald-500' },
-  { label: 'Negative', pct: 28.5, count: '13,023', color: '#ef4444', bg: 'bg-red-500'     },
+  {
+    label: 'Neutral',
+    pct: 40.2,
+    count: '18,318',
+    color: '#64748b',
+    bg: 'bg-slate-500',
+    meaning: 'Mostly factual, unclear, or low-emotion tweets.',
+    impact: 'Largest class, so models can over-predict neutral unless calibration corrects ambiguity.',
+  },
+  {
+    label: 'Positive',
+    pct: 31.3,
+    count: '14,274',
+    color: '#059669',
+    bg: 'bg-emerald-600',
+    meaning: 'Praise, satisfaction, approval, or successful outcomes.',
+    impact: 'Clear positive words are easier; understated positives need contextual handling.',
+  },
+  {
+    label: 'Negative',
+    pct: 28.5,
+    count: '13,023',
+    color: '#dc2626',
+    bg: 'bg-red-600',
+    meaning: 'Complaints, failures, disappointment, or adverse experiences.',
+    impact: 'Sarcasm and thwarted expectations are the main failure modes this project calibrates.',
+  },
 ]
 
 const PIPELINE = [
@@ -92,18 +116,27 @@ function MetricsTab() {
   return (
     <div className="space-y-8">
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
-          { icon: '🏆', label: 'Best Model',    val: best.model,                     sub: `F1: ${best.f1.toFixed(3)}`, color: '#10b981' },
-          { icon: '📈', label: 'Best Macro F1', val: `${(best.f1*100).toFixed(1)}%`, sub: `+${gain}pp vs VADER`,       color: '#4f46e5' },
-          { icon: '🤖', label: 'Models Tested', val: '5',                            sub: 'VADER · LR · RF · SVM · BiLSTM', color: '#0891b2' },
-          { icon: '🏷️', label: 'Classes',       val: '3',                            sub: 'Neg · Neutral · Positive',   color: '#d97706' },
+          { icon: '🏆', label: 'Best Model',    val: best.model,                     sub: `Macro F1: ${best.f1.toFixed(3)}`, note: 'Strongest overall test performance', color: '#059669', bg: 'from-emerald-50 to-teal-50', ring: 'border-emerald-200' },
+          { icon: '📈', label: 'Best Macro F1', val: `${(best.f1*100).toFixed(1)}%`, sub: `+${gain}pp vs VADER`,          note: 'Balanced score across all classes', color: '#4f46e5', bg: 'from-indigo-50 to-blue-50', ring: 'border-indigo-200' },
+          { icon: '🤖', label: 'Models Tested', val: '5',                            sub: 'VADER · LR · RF · SVM · BiLSTM', note: 'Rule-based, classical ML, and deep learning', color: '#0891b2', bg: 'from-cyan-50 to-sky-50', ring: 'border-cyan-200' },
+          { icon: '🏷️', label: 'Classes',       val: '3',                            sub: 'Negative · Neutral · Positive', note: 'The calibrated UI also supports Mixed edge cases', color: '#d97706', bg: 'from-amber-50 to-orange-50', ring: 'border-amber-200' },
         ].map(k => (
-          <div key={k.label} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div className="text-2xl mb-3">{k.icon}</div>
-            <div className="text-2xl font-extrabold" style={{ color: k.color }}>{k.val}</div>
-            <div className="text-sm font-semibold text-gray-700 mt-0.5">{k.label}</div>
-            <div className="text-xs text-slate-400 mt-0.5">{k.sub}</div>
+          <div key={k.label} className={`min-h-[168px] rounded-2xl border bg-gradient-to-br ${k.bg} ${k.ring} p-5 shadow-sm flex flex-col justify-between`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-black uppercase tracking-widest text-slate-500">{k.label}</div>
+                <div className="mt-2 text-2xl font-extrabold leading-tight" style={{ color: k.color }}>{k.val}</div>
+              </div>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/80 text-2xl shadow-sm border border-white">
+                {k.icon}
+              </div>
+            </div>
+            <div className="mt-4 border-t border-white/70 pt-3">
+              <div className="text-xs font-bold text-slate-700">{k.sub}</div>
+              <div className="mt-1 text-[11px] leading-relaxed text-slate-500">{k.note}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -185,42 +218,70 @@ function MetricsTab() {
       </div>
 
       {/* Dataset stats + class distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Dataset Statistics</h3>
-          <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 h-full">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-900">Dataset Statistics</h3>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              These numbers define the training problem size, the evaluation split, and the text-processing limits used by the models.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { label: 'Total Samples',    val: '45,615', color: '#4f46e5' },
-              { label: 'Training Set',     val: '36,493', color: '#3b82f6' },
-              { label: 'Test Set',         val: '9,122',  color: '#8b5cf6' },
-              { label: 'Vocab Size',       val: '~25K',   color: '#0891b2' },
-              { label: 'Avg Tweet Length', val: '71 chars', color: '#d97706' },
-              { label: 'Sentiment Classes',val: '3',      color: '#dc2626' },
+              { label: 'Total Samples',    val: '45,615', color: '#4f46e5', desc: 'All labelled tweets used across train, validation, and test splits.' },
+              { label: 'Training Set',     val: '36,493', color: '#2563eb', desc: 'Rows used to fit the ML models and neural network weights.' },
+              { label: 'Test Set',         val: '9,122',  color: '#7c3aed', desc: 'Held-out examples used for the final benchmark numbers.' },
+              { label: 'Vocab Size',       val: '~25K',   color: '#0891b2', desc: 'Approximate useful vocabulary after cleaning and token filtering.' },
+              { label: 'Avg Tweet Length', val: '71 chars', color: '#d97706', desc: 'Short text makes context, negation, and sarcasm harder.' },
+              { label: 'Sentiment Classes',val: '3',      color: '#dc2626', desc: 'Benchmark labels: negative, neutral, and positive.' },
             ].map(s => (
-              <div key={s.label} className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
-                <div className="text-lg font-extrabold" style={{ color: s.color }}>{s.val}</div>
-                <div className="text-xs text-slate-500 mt-0.5 leading-tight">{s.label}</div>
+              <div key={s.label} className="min-h-[116px] rounded-xl bg-slate-50 border border-slate-100 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-xl font-extrabold" style={{ color: s.color }}>{s.val}</div>
+                    <div className="text-xs font-bold text-slate-700 mt-0.5 leading-tight">{s.label}</div>
+                  </div>
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: s.color }} />
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed mt-2">{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Class Distribution</h3>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 h-full">
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-900">Class Distribution</h3>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              This shows how often each sentiment appears in the benchmark. It explains why neutral is common and why calibrated edge-case handling matters.
+            </p>
+          </div>
           <div className="space-y-4">
             {CLASS_DIST.map(cl => (
-              <div key={cl.label} className="flex items-center gap-3">
-                <div className="w-20 shrink-0 flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cl.color }} />
-                  <span className="text-sm font-semibold text-gray-700">{cl.label}</span>
+              <div key={cl.label} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-24 shrink-0 flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cl.color }} />
+                    <span className="text-sm font-bold text-gray-800">{cl.label}</span>
+                  </div>
+                  <div className="flex-1 h-8 bg-white rounded-xl overflow-hidden border border-slate-100">
+                    <div className="h-full rounded-xl flex items-center px-3"
+                         style={{ width: `${cl.pct}%`, backgroundColor: cl.color + '26', border: `2px solid ${cl.color}55` }}>
+                      <span className="text-xs font-black" style={{ color: cl.color }}>{cl.pct}%</span>
+                    </div>
+                  </div>
+                  <span className="text-sm text-slate-500 font-mono w-16 text-right">{cl.count}</span>
                 </div>
-                <div className="flex-1 h-7 bg-slate-100 rounded-xl overflow-hidden">
-                  <div className="h-full rounded-xl flex items-center px-3"
-                       style={{ width: `${cl.pct}%`, backgroundColor: cl.color + '28', border: `2px solid ${cl.color}50` }}>
-                    <span className="text-xs font-bold" style={{ color: cl.color }}>{cl.pct}%</span>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-white pt-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">What it represents</p>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1">{cl.meaning}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Model impact</p>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1">{cl.impact}</p>
                   </div>
                 </div>
-                <span className="text-sm text-slate-500 font-mono w-14 text-right">{cl.count}</span>
               </div>
             ))}
           </div>
@@ -322,31 +383,29 @@ function ArchTab() {
 
         {/* Flow diagram — full-width strip */}
         <div className="relative z-10 mt-8 px-8 pb-8">
-          <div className="flex items-stretch gap-0 rounded-2xl overflow-hidden border border-white/10">
+          <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-white/10 md:grid-cols-5">
             {[
-              { n:'1', label:'Raw Tweet',  sub:'User input text',          icon:'💬', bg:'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950', border:'border-slate-400/30' },
-              { n:'2', label:'Preprocess', sub:'Clean · normalise · tokenise', icon:'🧹', bg:'bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-800', border:'border-cyan-300/30' },
-              { n:'3', label:'5 Models',   sub:'VADER · LR · RF · SVM · BiLSTM', icon:'🤖', bg:'bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-800', border:'border-indigo-300/30' },
-              { n:'4', label:'Consensus',  sub:'Confidence-weighted vote',  icon:'⚖️', bg:'bg-gradient-to-br from-fuchsia-600 via-violet-700 to-indigo-800', border:'border-fuchsia-300/30' },
-              { n:'5', label:'Verdict',    sub:'Positive · Neutral · Negative · Mixed', icon:'✅', bg:'bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800', border:'border-emerald-300/30' },
+              { n:'1', label:'Raw Tweet',  sub:'User input text',          note:'Original sentence entered in the UI.', icon:'💬', bg:'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950', border:'border-slate-400/30' },
+              { n:'2', label:'Preprocess', sub:'Clean · normalise · tokenise', note:'URLs, mentions, casing, and tokens are standardised.', icon:'🧹', bg:'bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-800', border:'border-cyan-300/30' },
+              { n:'3', label:'5 Models',   sub:'VADER · LR · RF · SVM · BiLSTM', note:'Different model families score the same text.', icon:'🤖', bg:'bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-800', border:'border-indigo-300/30' },
+              { n:'4', label:'Consensus',  sub:'Confidence-weighted vote',  note:'Model confidence decides how much each vote counts.', icon:'⚖️', bg:'bg-gradient-to-br from-fuchsia-600 via-violet-700 to-indigo-800', border:'border-fuchsia-300/30' },
+              { n:'5', label:'Verdict',    sub:'Positive · Neutral · Negative · Mixed', note:'Calibrated final label shown in the UI.', icon:'✅', bg:'bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800', border:'border-emerald-300/30' },
             ].map((step, i) => (
-              <div key={step.label} className="flex items-center flex-1 min-w-0">
-                <div className={`relative flex-1 min-h-[170px] flex flex-col items-center justify-center gap-3 overflow-hidden py-7 px-4 ${step.bg} border-r ${step.border} text-center shadow-inner`}>
-                  <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
-                  <div className="w-10 h-10 rounded-full bg-white/12 border border-white/25 flex items-center justify-center text-xs font-black text-white/80 shadow-sm">{step.n}</div>
-                  <div className="text-3xl drop-shadow-sm">{step.icon}</div>
-                  <div>
-                    <p className="text-white text-base font-extrabold leading-tight">{step.label}</p>
-                    <p className="text-white/65 text-[11px] mt-1 leading-tight">{step.sub}</p>
-                  </div>
-                </div>
+              <div
+                key={step.label}
+                className={`relative min-h-[210px] border-b md:border-b-0 md:border-r ${step.border} ${step.bg} p-5 text-center shadow-inner last:border-r-0`}
+              >
+                <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
                 {i < 4 && (
-                  <div className="shrink-0 flex flex-col items-center justify-center h-full px-0 z-10">
-                    <svg width="20" height="40" viewBox="0 0 20 40" fill="none">
-                      <path d="M0 20 L12 20 M8 14 L20 20 L8 26" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
+                  <div className="absolute right-3 top-1/2 hidden -translate-y-1/2 text-3xl font-light text-white/30 md:block">→</div>
                 )}
+                <div className="mx-auto flex h-full max-w-[15rem] flex-col items-center justify-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/12 text-sm font-black text-white/80 shadow-sm">{step.n}</div>
+                  <div className="text-3xl drop-shadow-sm">{step.icon}</div>
+                  <p className="text-white text-lg font-extrabold leading-tight">{step.label}</p>
+                  <p className="text-white/70 text-xs leading-tight">{step.sub}</p>
+                  <p className="text-white/50 text-[11px] leading-relaxed">{step.note}</p>
+                </div>
               </div>
             ))}
           </div>
