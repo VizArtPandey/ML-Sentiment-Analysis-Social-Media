@@ -25,9 +25,11 @@ export async function healthCheck() {
   return data
 }
 
-export async function getLiveEval(n = 10, hashtag = '') {
+export async function getLiveEval(n = 10, hashtag = '', bearerToken = '') {
   const params = { n }
   if (hashtag) params.hashtag = hashtag
-  const { data } = await client.get('/live-eval', { params })
+  const headers = {}
+  if (bearerToken) headers['X-Twitter-Bearer-Token'] = bearerToken
+  const { data } = await client.get('/live-eval', { params, headers })
   return data
 }

@@ -58,21 +58,38 @@ def _try_load_joblib_model(filename: str, label: str):
 
 
 def _try_load_bilstm():
+    """Load BiLSTM model. Tries bilstm_best.h5 first (Keras 2 compatible),
+    then falls back to bilstm_best.keras (requires Keras 3 / TF ≥ 2.16)."""
     try:
         import joblib
         import tensorflow as tf
         from phase_04_rnn_bilstm.build_bilstm import AttentionLayer
 
-        model_path = BILSTM_MODEL_PATH
-        tok_path   = PHASE02_ARTIFACTS / "tokenizer.pkl"
-        if not model_path.exists() or not tok_path.exists():
+        tok_path = PHASE02_ARTIFACTS / "tokenizer.pkl"
+        if not tok_path.exists():
             return None, None
+
+        # Prefer .h5 (Keras 2 native format)
+        h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
+        model_path = h5_path if h5_path.exists() else BILSTM_MODEL_PATH
+        if not model_path.exists():
+            logger.warning("BiLSTM model not found. Run: python -m phase_04_rnn_bilstm.02_train_rnn")
+            return None, None
+
+        logger.info(f"Loading BiLSTM from {model_path.name}…")
         model     = tf.keras.models.load_model(str(model_path),
                                                 custom_objects={"AttentionLayer": AttentionLayer})
         tokenizer = joblib.load(tok_path)
         return model, tokenizer
     except Exception as e:
-        logger.warning(f"BiLSTM load failed: {e}")
+        msg = str(e)
+        if "keras.src" in msg or "Functional" in msg:
+            logger.warning(
+                "BiLSTM .keras file requires Keras 3. "
+                "Retrain with: python -m phase_04_rnn_bilstm.02_train_rnn  (saves .h5 for Keras 2)"
+            )
+        else:
+            logger.warning(f"BiLSTM load failed: {e}")
         return None, None
 
 

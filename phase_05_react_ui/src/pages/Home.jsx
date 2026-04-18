@@ -8,8 +8,8 @@ import { predictAll } from '../lib/api'
 
 function mockPredict(text) {
   const words = text.toLowerCase().split(/\s+/)
-  const pos = ['love','great','amazing','excellent','wonderful','awesome','fantastic','good','happy','best','perfect','changed','brilliant','superb','outstanding']
-  const neg = ['hate','terrible','awful','worst','horrible','bad','sad','angry','disgusting','never','disaster','poor','broken','rude','useless']
+  const pos = ['love','great','amazing','excellent','wonderful','awesome','fantastic','good','happy','best','perfect','changed','brilliant','superb','outstanding','enjoyed','delightful','impressed','pleased','recommend','fantastic','beautiful']
+  const neg = ['hate','terrible','awful','worst','horrible','bad','sad','angry','disgusting','never','disaster','poor','broken','rude','useless','disappointed','disappointing','uncomfortable','cardboard','stiff','dirty','loud','broken','slow','delayed','ignored','failed','waste','overpriced','smelled','smelly','cracked','leaking','infested','noisy','unfriendly','mediocre','subpar','lacking','regret','avoid','nightmare','unacceptable','appalling']
   let score = 0
   words.forEach((w) => { if (pos.includes(w)) score++; if (neg.includes(w)) score-- })
   const label = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral'
@@ -34,6 +34,55 @@ function buildMockResults(text) {
     return { label: base.label, confidence: conf, scores }
   }
   return { calibrated: mk(0.02), vader: mk(0.08), lr: mk(0.05), rf: mk(0.07), svm: mk(0.04), bilstm: mk(0.03), attention: null }
+}
+
+const QUICK_SENT = {
+  positive: { bg: 'bg-gradient-to-r from-emerald-50 to-teal-50', border: 'border-emerald-300', pill: 'bg-emerald-100 text-emerald-800 border-emerald-300', dot: 'bg-emerald-500', icon: '😊' },
+  negative: { bg: 'bg-gradient-to-r from-red-50 to-rose-50',     border: 'border-red-300',     pill: 'bg-red-100 text-red-800 border-red-300',         dot: 'bg-red-500',     icon: '😞' },
+  neutral:  { bg: 'bg-gradient-to-r from-slate-50 to-gray-50',   border: 'border-slate-300',   pill: 'bg-slate-100 text-slate-700 border-slate-300',   dot: 'bg-slate-400',   icon: '😐' },
+  mixed:    { bg: 'bg-gradient-to-r from-amber-50 to-yellow-50', border: 'border-amber-300',   pill: 'bg-amber-100 text-amber-800 border-amber-300',   dot: 'bg-amber-500',   icon: '◐'  },
+}
+
+function quickConsensus(results) {
+  if (!results) return null
+  if (results.calibrated?.label) return results.calibrated.label
+  const keys = ['bilstm','svm','lr','rf','vader'].filter(k => results[k])
+  if (!keys.length) return null
+  const weighted = {}
+  keys.forEach(k => {
+    const lbl  = results[k].label
+    const conf = results[k].confidence ?? 0.5
+    weighted[lbl] = (weighted[lbl] || 0) + conf
+  })
+  return Object.entries(weighted).sort((a, b) => b[1] - a[1])[0][0]
+}
+
+function AnalyzedTextBanner({ text, results }) {
+  const label = quickConsensus(results)
+  const s = QUICK_SENT[label] ?? QUICK_SENT.neutral
+  return (
+    <div className={`rounded-2xl border-2 p-5 animate-fade-in ${s.bg} ${s.border}`}>
+      <div className="flex items-start gap-4">
+        {/* Big emoji */}
+        <div className="text-4xl shrink-0 mt-0.5 select-none">{s.icon}</div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Analyzing</p>
+            {label && (
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-bold ${s.pill}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                {label.charAt(0).toUpperCase() + label.slice(1)}
+              </span>
+            )}
+          </div>
+          <p className="text-gray-900 text-base font-medium leading-relaxed">
+            &ldquo;{text}&rdquo;
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function SessionStats({ history }) {
@@ -125,19 +174,14 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── 1. Analyzed Text — prominent, always first ── */}
+      {analyzedText && filteredResults && (
+        <AnalyzedTextBanner text={analyzedText} results={results} />
+      )}
+
+      {/* ── 2. Current result + model details ── */}
       {filteredResults && (
         <div className="space-y-8">
-          {/* Analyzed text callout */}
-          {analyzedText && (
-            <div className="card p-4 flex gap-3 items-start border-l-4 border-l-indigo-500 animate-fade-in">
-              <span className="text-indigo-400 text-lg shrink-0 mt-0.5">💬</span>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Analyzed Text</p>
-                <p className="text-gray-800 text-sm leading-relaxed">"{analyzedText}"</p>
-              </div>
-            </div>
-          )}
-
           <ModelSelector selected={modelMode} onChange={setModelMode} />
           <ModelComparison results={filteredResults} />
 
@@ -148,6 +192,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── 3. Session Summary + Recent Analyses ── */}
       {history.length > 0 && (
         <div className="space-y-4">
           <h3 className="section-title text-center">Session Summary</h3>

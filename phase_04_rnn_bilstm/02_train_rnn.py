@@ -83,7 +83,9 @@ def main():
     model = build_bilstm(vocab_size=min(VOCAB_SIZE, len(tokenizer.word_index) + 2))
 
     PHASE04_MODELS.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = str(BILSTM_MODEL_PATH)
+    # Always save as .h5 so Keras 2 (TF 2.13) can load it
+    h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
+    checkpoint_path = str(h5_path)
 
     callbacks = [
         tf.keras.callbacks.EarlyStopping(monitor="val_loss",
@@ -92,6 +94,7 @@ def main():
         tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
                                             monitor="val_loss",
                                             save_best_only=True,
+                                            save_format="h5",
                                             verbose=1),
         tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5,
                                               patience=2, min_lr=1e-5, verbose=1),
@@ -111,7 +114,7 @@ def main():
 
     loss, acc = model.evaluate(X_test, y_test, verbose=0)
     print(f"\nTest loss: {loss:.4f}  |  Test accuracy: {acc:.4f}")
-    print(f"Best model checkpoint: {checkpoint_path}")
+    print(f"Saved .h5 model → {checkpoint_path}")
 
     # save test arrays for evaluation script
     np.save(PHASE04_MODELS / "X_test.npy", X_test)

@@ -292,8 +292,8 @@ def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> list[dict]:
     return results
 
 
-def _live_twitter_hashtag_eval(hashtag: str, n: int) -> list[dict]:
-    token = _twitter_bearer_token()
+def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = None) -> list[dict]:
+    token = header_token or _twitter_bearer_token()
     if not token:
         return _fallback_hashtag_eval(
             hashtag,
@@ -354,10 +354,11 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int) -> list[dict]:
 
 
 @app.get("/api/live-eval", tags=["inference"])
-def live_eval(n: int = 10, hashtag: str | None = None):
+def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
     """Return live hashtag results from X, or sample tweet_eval rows without a hashtag."""
     if hashtag:
-        return _live_twitter_hashtag_eval(hashtag, n)
+        header_token = request.headers.get("X-Twitter-Bearer-Token") or None
+        return _live_twitter_hashtag_eval(hashtag, n, header_token)
 
     n = max(1, min(n, 20))
     _ensure_eval_tweets()

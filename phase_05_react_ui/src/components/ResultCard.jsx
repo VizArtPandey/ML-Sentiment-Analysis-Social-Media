@@ -54,7 +54,7 @@ export default function ResultCard({ modelName, label, confidence, scores }) {
   const confPct = ((confidence ?? 0) * 100).toFixed(1)
 
   return (
-    <div className={`rounded-2xl border p-4 flex flex-col gap-3 animate-slide-up ${s.bg} ${s.border} ${s.ring}`}>
+    <div className={`flex-1 min-w-0 rounded-2xl border p-4 flex flex-col gap-3 animate-slide-up ${s.bg} ${s.border} ${s.ring}`}>
       {/* Model header */}
       <div className="flex items-center justify-between">
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${m.bg} ${m.color}`}>

@@ -1,7 +1,7 @@
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ReferenceLine,
-  LineChart, Line,
+  LineChart, Line, Cell,
 } from 'recharts'
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
@@ -206,7 +206,7 @@ export default function MetricsDashboard({ benchmarkData }) {
                  label={{ position:'top', fill:'#374151', fontSize:11, fontWeight:700,
                           formatter:(v) => v.toFixed(3) }}>
               {benchmarkData.map((row) => (
-                <rect key={row.model} fill={MODEL_COLORS[row.model] ?? '#6366f1'} />
+                <Cell key={row.model} fill={MODEL_COLORS[row.model] ?? '#6366f1'} />
               ))}
             </Bar>
           </BarChart>
