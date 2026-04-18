@@ -22,7 +22,12 @@ ENV/
 *.keras
 *.pkl
 *.joblib
+!phase_02_feature_engineering/artifacts/tokenizer.pkl
+!phase_03_classical_models/results/lr_model.joblib
+!phase_03_classical_models/results/rf_model.joblib
+!phase_03_classical_models/results/svm_model.joblib
 !phase_03_classical_models/results/ambiguity_calibrator.joblib
+!phase_04_rnn_bilstm/saved_models/bilstm_best.keras
 *.bin
 *.pt
 *.pth

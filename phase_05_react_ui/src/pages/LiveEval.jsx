@@ -99,27 +99,11 @@ function ModelPill({ modelKey, result }) {
   )
 }
 
-function MetricsRow({ metrics = {}, source, sourceDetail }) {
+function MetricsRow({ metrics = {}, source }) {
   const items = [['Likes', metrics.like_count], ['Replies', metrics.reply_count], ['Reposts', metrics.retweet_count], ['Quotes', metrics.quote_count]]
-  const hasRealData = items.some(([, v]) => v != null && v > 0)
+  const hasMetricFields = source === 'x' && items.some(([, v]) => v != null)
 
-  if (!hasRealData) {
-    return (
-      <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${source === 'x' ? 'bg-slate-50 border-slate-200' : 'bg-amber-50 border-amber-200'}`}>
-        <span className={`${source === 'x' ? 'text-slate-500' : 'text-amber-500'} text-base shrink-0 mt-0.5`}>ℹ️</span>
-        <div className={`text-xs font-medium space-y-1 ${source === 'x' ? 'text-slate-600' : 'text-amber-700'}`}>
-          <p className="font-bold">{source === 'x' ? 'Engagement returned as zero' : 'No engagement data available'}</p>
-          <p>
-            {source === 'fallback' || source === 'dataset'
-              ? sourceDetail || 'These are local fallback posts (no real X/Twitter engagement). Paste your Bearer Token above to fetch live tweets with real engagement metrics.'
-              : source === 'x'
-                ? 'This is a live X/Twitter post, but public metrics are currently all zero for this result.'
-              : 'No public engagement data returned for this post.'}
-          </p>
-        </div>
-      </div>
-    )
-  }
+  if (!hasMetricFields) return null
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -201,7 +185,7 @@ function TweetCard({ tweet, index }) {
               </a>
             )}
           </div>
-          <MetricsRow metrics={tweet.metrics} source={tweet.source} sourceDetail={tweet.source_detail} />
+          <MetricsRow metrics={tweet.metrics} source={tweet.source} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             {MODELS.map(key => <ModelPill key={key} modelKey={key} result={tweet.predictions?.[key]} />)}
           </div>
@@ -357,7 +341,7 @@ function TwitterConnectPanel({ token, onSave }) {
               pip install -r requirements.txt<br />
               python -m phase_04_rnn_bilstm.02_train_rnn
             </code>
-            <p className="text-slate-400">Then restart the backend. Training saves <span className="font-mono text-amber-300">bilstm_best.h5</span>; the existing <span className="font-mono text-amber-300">.keras</span> model can load once TensorFlow/Keras is installed.</p>
+            <p className="text-slate-400">Then restart the backend. Training saves <span className="font-mono text-amber-300">bilstm_best.keras</span> for TensorFlow/Keras 3 and a local <span className="font-mono text-amber-300">.h5</span> copy for older tooling.</p>
           </div>
         </div>
       )}
@@ -537,7 +521,7 @@ export default function LiveEval() {
             ))}
           </div>
 
-          <p className="text-center text-xs text-slate-400 pb-4">Click any post to expand model details and engagement metrics</p>
+          <p className="text-center text-xs text-slate-400 pb-4">Click any post to expand model details; live X posts also show engagement metrics.</p>
         </>
       )}
     </div>

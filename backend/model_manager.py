@@ -15,6 +15,7 @@ from src.preprocess import preprocess_social_text
 logger = logging.getLogger(__name__)
 
 _models: dict = {}
+_attention_build_failed = False
 
 
 def _try_load_vader():
@@ -58,8 +59,7 @@ def _try_load_joblib_model(filename: str, label: str):
 
 
 def _try_load_bilstm():
-    """Load BiLSTM model. Tries bilstm_best.h5 first (Keras 2 compatible),
-    then falls back to bilstm_best.keras (requires Keras 3 / TF ≥ 2.16)."""
+    """Load BiLSTM model, preferring the native Keras 3 checkpoint."""
     try:
         import joblib
         import tensorflow as tf
@@ -69,18 +69,27 @@ def _try_load_bilstm():
         if not tok_path.exists():
             return None, None
 
-        # Prefer .h5 (Keras 2 native format)
+        tokenizer = joblib.load(tok_path)
+
         h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
-        model_path = h5_path if h5_path.exists() else BILSTM_MODEL_PATH
-        if not model_path.exists():
+        model_paths = [path for path in (BILSTM_MODEL_PATH, h5_path) if path.exists()]
+        if not model_paths:
             logger.warning("BiLSTM model not found. Run: python -m phase_04_rnn_bilstm.02_train_rnn")
             return None, None
 
-        logger.info(f"Loading BiLSTM from {model_path.name}…")
-        model     = tf.keras.models.load_model(str(model_path),
-                                                custom_objects={"AttentionLayer": AttentionLayer})
-        tokenizer = joblib.load(tok_path)
-        return model, tokenizer
+        last_error = None
+        for model_path in model_paths:
+            try:
+                logger.info(f"Loading BiLSTM from {model_path.name}…")
+                model = tf.keras.models.load_model(
+                    str(model_path),
+                    custom_objects={"AttentionLayer": AttentionLayer},
+                )
+                return model, tokenizer
+            except Exception as exc:
+                last_error = exc
+                logger.warning(f"BiLSTM load from {model_path.name} failed: {exc}")
+        raise last_error
     except Exception as e:
         msg = str(e)
         if "keras.src" in msg or "Functional" in msg:
@@ -94,7 +103,8 @@ def _try_load_bilstm():
 
 
 def startup():
-    global _models
+    global _models, _attention_build_failed
+    _attention_build_failed = False
     logger.info("Loading all models…")
     _models["vader"] = _try_load_vader()
 
@@ -106,7 +116,12 @@ def startup():
     bilstm, tokenizer = _try_load_bilstm()
     _models["bilstm"]    = bilstm
     _models["tokenizer"] = tokenizer
-    _models["attention_model"] = _build_attention_model(bilstm) if bilstm is not None else None
+    try:
+        _models["attention_model"] = _build_attention_model(bilstm) if bilstm is not None else None
+    except Exception as e:
+        logger.warning(f"Attention model build failed: {e}")
+        _models["attention_model"] = None
+        _attention_build_failed = True
 
     loaded = {k: v is not None for k, v in _models.items()}
     logger.info(f"Models ready: {loaded}")
@@ -180,6 +195,7 @@ def _build_attention_model(model):
 
 def predict_bilstm(text: str) -> tuple[dict | None, dict | None]:
     """Returns (prediction_dict, attention_dict)."""
+    global _attention_build_failed
     model = _models.get("bilstm")
     tokenizer = _models.get("tokenizer")
     attn_model = _models.get("attention_model")
@@ -196,24 +212,33 @@ def predict_bilstm(text: str) -> tuple[dict | None, dict | None]:
     seq   = tokenizer.texts_to_sequences([clean])
     padded = pad_sequences(seq, maxlen=MAX_SEQ_LEN, padding="post", truncating="post")
 
-    if attn_model is None:
-        attn_model = _build_attention_model(model)
-        _models["attention_model"] = attn_model
+    if attn_model is None and not _attention_build_failed:
+        try:
+            attn_model = _build_attention_model(model)
+            _models["attention_model"] = attn_model
+        except Exception as e:
+            logger.warning(f"Attention weights unavailable: {e}")
+            _models["attention_model"] = None
+            _attention_build_failed = True
 
-    proba, weights = attn_model.predict(padded, verbose=0)
-    proba    = proba[0]
-    weights  = weights[0]          # (MAX_SEQ_LEN, 1)
+    weights = None
+    if attn_model is not None:
+        proba, weights = attn_model.predict(padded, verbose=0)
+        proba = proba[0]
+        weights = weights[0]       # (MAX_SEQ_LEN, 1)
+    else:
+        proba = model.predict(padded, verbose=0)[0]
 
     idx = int(proba.argmax())
     tokens  = clean.split()[:MAX_SEQ_LEN]
-    w_slice = weights[:len(tokens), 0].tolist()
+    w_slice = weights[:len(tokens), 0].tolist() if weights is not None else []
 
     prediction = {
         "label": SENTIMENT_LABELS[idx],
         "confidence": round(float(proba[idx]), 4),
         "scores": {l: round(float(p), 4) for l, p in zip(SENTIMENT_LABELS, proba)},
     }
-    attention = {"tokens": tokens, "weights": w_slice}
+    attention = {"tokens": tokens, "weights": w_slice} if weights is not None else None
     return prediction, attention
 
 
