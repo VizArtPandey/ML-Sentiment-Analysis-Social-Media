@@ -99,3 +99,4 @@ id,text,sentiment,type
 98,"The launch was chaotic, but the customers loved it.",mixed,mixed_polarity
 99,"I laughed at the review and still could not tell whether it was praise.",mixed,ambiguity
 100,"The ending disappointed me just enough to make the whole story memorable.",mixed,bittersweet_mixed
+101,"I was ready to love this book but the ending ruined everything. honestly.",negative,thwarted_expectation

@@ -18,6 +18,7 @@ AMBIGUITY_MARKERS = (
     " another ",
     " definitely ",
     " high hopes",
+    " ready to love",
     " expected ",
     " so bad",
     " not exactly",
@@ -52,8 +53,8 @@ NEGATIVE_TERMS = {
     "awful", "bad", "broke", "broken", "bugs", "cancelled", "clunky",
     "crashed", "delay", "delayed", "empty", "failed", "flip", "flop",
     "frustrating", "hate", "hated", "horrible", "mess", "noisy",
-    "painful", "problems", "regret", "regretted", "stressful",
-    "subpar", "sun", "terrible", "waiting", "worst",
+    "painful", "problems", "regret", "regretted", "ruin", "ruined",
+    "stressful", "subpar", "sun", "terrible", "waiting", "worst",
 }
 
 
@@ -103,9 +104,9 @@ def _rule_match(text: str) -> RuleResult | None:
     if "definitely" in clean and re.search(r"\b(bugs|problems|failed|crashed|delay|delayed)\b", clean):
         return RuleResult("negative", 0.88, _scores("negative", 0.88))
 
-    if "high hopes" in clean or "expected" in clean or "excited" in clean or "promising" in clean:
+    if "high hopes" in clean or "ready to love" in clean or "expected" in clean or "excited" in clean or "promising" in clean:
         tail = _last_contrast_clause(clean)
-        if tail and (_term_count(tail, NEGATIVE_TERMS) > 0 or "tasted like" in tail):
+        if tail and (_term_count(tail, NEGATIVE_TERMS) > 0 or "tasted like" in tail or "ruined everything" in tail):
             return RuleResult("negative", 0.9, _scores("negative", 0.9))
 
     if re.search(r"\b(hated|terrible|mess|cold|bored|regretted|miss|lost|noisy|cheap|stung|disappointed)\b", clean):
