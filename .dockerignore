@@ -1,0 +1,13 @@
+.git
+.venv
+.venv*/
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+phase_05_react_ui/node_modules/
+phase_05_react_ui/dist/
+.matplotlib/
+.env
+tests/__pycache__/

@@ -1,0 +1,7 @@
+{
+  "model": "RandomForest",
+  "n_estimators": 300,
+  "test_macro_f1": 0.5,
+  "test_macro_precision": 0.4444,
+  "test_macro_recall": 0.6667
+}

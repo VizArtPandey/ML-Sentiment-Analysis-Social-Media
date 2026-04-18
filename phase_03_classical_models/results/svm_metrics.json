@@ -1,0 +1,7 @@
+{
+  "model": "SVM_LinearSVC",
+  "C": 1.0,
+  "test_macro_f1": 0.4444,
+  "test_macro_precision": 0.3333,
+  "test_macro_recall": 0.6667
+}

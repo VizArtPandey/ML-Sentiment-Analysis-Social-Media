@@ -1,0 +1,5 @@
+model,macro_f1,macro_precision,macro_recall
+VADER,1.0,1.0,1.0
+Logistic Regression,0.4444,0.3333,0.6667
+Random Forest,0.5,0.4444,0.6667
+SVM,0.4444,0.3333,0.6667

@@ -1,0 +1,8 @@
+{
+  "model": "LogisticRegression",
+  "best_C": 0.1,
+  "cv_macro_f1": 0.7639,
+  "test_macro_f1": 0.4444,
+  "test_macro_precision": 0.3333,
+  "test_macro_recall": 0.6667
+}

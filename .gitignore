@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+.eggs/
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# ML model artifacts (large binaries)
+*.h5
+*.keras
+*.pkl
+*.joblib
+*.bin
+*.pt
+*.pth
+data/models/
+phase_04_rnn_bilstm/models/
+phase_03_classical_models/models/
+
+# Datasets (downloaded at runtime from HuggingFace)
+data/raw/
+data/processed/
+*.parquet
+*.arrow
+*.feather
+
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Node / React
+phase_05_react_ui/node_modules/
+phase_05_react_ui/dist/
+phase_05_react_ui/.vite/
+
+# macOS
+.DS_Store
+.AppleDouble
+._*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/

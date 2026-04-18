@@ -1,0 +1,21 @@
+text,label,source,label_name,split,char_len_raw,clean_text,char_len_clean
+I love this product so much,positive,sample_fallback,positive,train,27,i love this product so much,27
+I am super happy with the service,positive,sample_fallback,positive,train,33,i am super happy with the service,33
+The update broke everything,negative,sample_fallback,negative,train,27,the update broke everything,27
+The design is fine but not exciting,neutral,sample_fallback,neutral,train,35,the design is fine but not exciting,35
+"Amazing update, very smooth and fast",positive,sample_fallback,positive,train,36,amazing update very smooth and fast,35
+Absolutely fantastic experience today,positive,sample_fallback,positive,train,37,absolutely fantastic experience today,37
+This app is terrible and keeps crashing,negative,sample_fallback,negative,train,39,this app is terrible and keeps crashing,39
+This is the worst purchase I made,negative,sample_fallback,negative,train,33,this is the worst purchase i made,33
+The experience is neither good nor bad,neutral,sample_fallback,neutral,train,38,the experience is neither good nor bad,38
+It is acceptable for now,neutral,sample_fallback,neutral,train,24,it is acceptable for now,24
+Worst customer support ever,negative,sample_fallback,negative,train,27,worst customer support ever,27
+Love the color scheme and speed,positive,sample_fallback,positive,train,31,love the color scheme and speed,31
+It is okay and works as expected,neutral,sample_fallback,neutral,train,32,it is okay and works as expected,32
+This is disappointing and frustrating,negative,sample_fallback,negative,validation,37,this is disappointing and frustrating,37
+Really impressed with the improvements,positive,sample_fallback,positive,validation,38,really impressed with the improvements,38
+The feature is useful but still basic,neutral,sample_fallback,neutral,validation,37,the feature is useful but still basic,37
+Bad performance after the patch,negative,sample_fallback,negative,test,31,bad performance after the patch,31
+What a wonderful release,positive,sample_fallback,positive,test,24,what a wonderful release,24
+"Nothing special, it is just average",neutral,sample_fallback,neutral,test,35,nothing special it is just average,34
+I hate the new layout,negative,sample_fallback,negative,test,21,i hate the new layout,21

@@ -1,0 +1,21 @@
+text,clean_text,label,label_name,split,source
+I love this product so much,i love this product so much,positive,positive,train,sample_fallback
+I am super happy with the service,i am super happy with the service,positive,positive,train,sample_fallback
+The update broke everything,the update broke everything,negative,negative,train,sample_fallback
+The design is fine but not exciting,the design is fine but not exciting,neutral,neutral,train,sample_fallback
+"Amazing update, very smooth and fast",amazing update very smooth and fast,positive,positive,train,sample_fallback
+Absolutely fantastic experience today,absolutely fantastic experience today,positive,positive,train,sample_fallback
+This app is terrible and keeps crashing,this app is terrible and keeps crashing,negative,negative,train,sample_fallback
+This is the worst purchase I made,this is the worst purchase i made,negative,negative,train,sample_fallback
+The experience is neither good nor bad,the experience is neither good nor bad,neutral,neutral,train,sample_fallback
+It is acceptable for now,it is acceptable for now,neutral,neutral,train,sample_fallback
+Worst customer support ever,worst customer support ever,negative,negative,train,sample_fallback
+Love the color scheme and speed,love the color scheme and speed,positive,positive,train,sample_fallback
+It is okay and works as expected,it is okay and works as expected,neutral,neutral,train,sample_fallback
+This is disappointing and frustrating,this is disappointing and frustrating,negative,negative,validation,sample_fallback
+Really impressed with the improvements,really impressed with the improvements,positive,positive,validation,sample_fallback
+The feature is useful but still basic,the feature is useful but still basic,neutral,neutral,validation,sample_fallback
+Bad performance after the patch,bad performance after the patch,negative,negative,test,sample_fallback
+What a wonderful release,what a wonderful release,positive,positive,test,sample_fallback
+"Nothing special, it is just average",nothing special it is just average,neutral,neutral,test,sample_fallback
+I hate the new layout,i hate the new layout,negative,negative,test,sample_fallback

@@ -1,0 +1,101 @@
+id,text,sentiment,type
+1,"Oh great, the app crashed again right before I clicked save.",negative,sarcasm
+2,"I had high hopes for the hotel, but the mattress felt like folded cardboard.",negative,thwarted_expectation
+3,"The new update is so intuitive that nobody in the office can find the login button.",negative,irony
+4,"This coffee is impressively consistent at tasting burnt.",negative,backhanded_compliment
+5,"The sequel makes the original look like a Nobel-worthy script.",negative,comparative_trap
+6,"I love spending my lunch break waiting for customer support to disconnect me.",negative,sarcasm
+7,"The headphones sounded amazing in the ad, but underwater in real life.",negative,thwarted_expectation
+8,"Your presentation was unforgettable for all the wrong reasons.",negative,backhanded_compliment
+9,"The service was fast if your goal was to leave hungry.",negative,irony
+10,"Compared with this phone, my old calculator had personality.",negative,comparative_trap
+11,"Perfect, the train left early on the one day I was on time.",negative,sarcasm
+12,"The dessert looked beautiful, but it tasted like sweetened regret.",negative,thwarted_expectation
+13,"It takes real talent to make fresh bread this dry.",negative,backhanded_compliment
+14,"The meeting was productive in the sense that it confirmed we had no plan.",negative,irony
+15,"This antivirus works so well that it blocked itself.",negative,sarcasm
+16,"The room was quiet except for the air conditioner reenacting a helicopter landing.",negative,contextual_negative
+17,"What a thoughtful feature, the battery dies exactly when I need directions.",negative,sarcasm
+18,"The restaurant calls this rustic; I call it undercooked.",negative,ambiguity
+19,"Their premium plan is a great way to pay more for the same disappointment.",negative,comparative_trap
+20,"I expected a thriller, but the movie put three people in my row to sleep.",negative,thwarted_expectation
+21,"The intern somehow turned a simple typo into a system-wide adventure.",negative,irony
+22,"The shoes are stylish if blisters are part of the look.",negative,backhanded_compliment
+23,"Nothing says luxury like peeling paint and a broken elevator.",negative,sarcasm
+24,"The game is challenging mostly because the controls fight back.",negative,comparative_trap
+25,"It is amazing how this printer jams only when the deadline matters.",negative,irony
+26,"The concert was not exactly easy to forget, and I mean that in the best way.",positive,litotes
+27,"I cannot say the team delivered anything less than impressive work.",positive,litotes
+28,"The meal was surprisingly simple, yet every bite landed perfectly.",positive,understated_positive
+29,"The film was quiet, slow, and somehow completely absorbing.",positive,ambiguity
+30,"It was not the worst idea we had all week, which felt like real progress.",positive,litotes
+31,"Her speech was understated but impossible to ignore.",positive,understated_positive
+32,"The software is not without flaws, though it saved us hours today.",positive,litotes
+33,"I was prepared to be disappointed, but the book won me over by page ten.",positive,reversal_positive
+34,"The apartment is small, but it wears the space well.",positive,contrast_positive
+35,"His feedback was blunt, fair, and oddly encouraging.",positive,ambiguity
+36,"I would be lying if I said I did not enjoy the chaos of that match.",positive,litotes
+37,"The clinic was not cheap, yet the care made the cost easier to accept.",positive,tradeoff_positive
+38,"This camera does not miss much, including details I did not notice myself.",positive,litotes
+39,"The lecture was dense, but rewarding in the way good lectures often are.",positive,contrast_positive
+40,"The new manager is demanding, which has been a relief after months of drift.",positive,contextual_positive
+41,"The tea was mild to the point of being elegant.",positive,understated_positive
+42,"It is hard to dislike a product that quietly does everything it promises.",positive,litotes
+43,"The ending hurt a little, which is how I knew the story worked.",positive,bittersweet_positive
+44,"The place is not fancy, but it feels honestly welcoming.",positive,understated_positive
+45,"The patch did not solve everything, though it fixed the issue that mattered most.",positive,partial_positive
+46,"I expected noise, but the headphones delivered calm.",positive,reversal_positive
+47,"The paint color looked risky online and somehow perfect on the wall.",positive,contrast_positive
+48,"He is not exactly warm, yet he shows up every time it counts.",positive,qualified_positive
+49,"The trip was exhausting, but the kind that leaves you grateful.",positive,bittersweet_positive
+50,"The results were modest on paper and excellent in practice.",positive,contrast_positive
+51,"The room was brighter than expected, though not necessarily better for it.",neutral,ambiguity
+52,"The product works as advertised, which feels unusual enough to mention.",neutral,neutral_statement
+53,"I finished the book and still cannot decide whether it was clever or merely strange.",neutral,ambiguity
+54,"The restaurant was empty, which was either a warning or a gift.",neutral,ambiguity
+55,"The meeting ended early, and nobody seemed sure if that was good news.",neutral,ambiguity
+56,"The coat is heavier than I wanted, but maybe that will matter in winter.",neutral,qualified_neutral
+57,"He smiled through the apology, making it harder to read.",neutral,ambiguity
+58,"The app is different now, not better or worse, just different.",neutral,neutral_statement
+59,"The neighborhood is lively at night, depending on how much sleep you need.",neutral,contextual_neutral
+60,"The coffee was strong enough to be memorable.",neutral,ambiguity
+61,"I have had louder compliments and quieter insults.",neutral,ambiguity
+62,"The movie knew exactly what it was doing, and I am not sure how I feel about that.",neutral,ambiguity
+63,"The redesign is bold, though not everyone would mean bold as praise.",neutral,ambiguity
+64,"She answered every question, which somehow revealed very little.",neutral,ambiguity
+65,"The package arrived early, and I had forgotten I ordered it.",neutral,neutral_statement
+66,"The song is catchy in the way jingles usually are.",neutral,ambiguity
+67,"The office is open-plan, which some people call collaborative.",neutral,contextual_neutral
+68,"The hotel view was blocked by another hotel with an equally blocked view.",neutral,ambiguity
+69,"It is a serious improvement if you remember where we started.",neutral,qualified_neutral
+70,"The class was easier than expected and harder to evaluate because of that.",neutral,ambiguity
+71,"The cake was rich enough that one slice felt like a decision.",neutral,ambiguity
+72,"He is efficient, if warmth is not part of the job description.",neutral,qualified_neutral
+73,"The article raised good points and then carefully avoided conclusions.",neutral,ambiguity
+74,"The update changed everything visible and nothing important.",neutral,irony
+75,"I kept thinking about the exhibition, though not always kindly.",neutral,mixed_signal
+76,"I hated how stressful the project was, but I loved what we built.",mixed,mixed_polarity
+77,"The vacation was a mess, and somehow I want to go back.",mixed,mixed_polarity
+78,"She is the kind of boss who ruins your morning and improves your career.",mixed,mixed_polarity
+79,"The movie bored me for an hour and then broke my heart in the best way.",mixed,mixed_polarity
+80,"The burger was terrible, but the story of how terrible it was made the night fun.",mixed,mixed_polarity
+81,"I am glad we tried it, even if I would never do it again.",mixed,mixed_polarity
+82,"The service was cold, yet the staff solved every problem I had.",mixed,mixed_polarity
+83,"The interface is beautiful and strangely exhausting to use.",mixed,mixed_polarity
+84,"He gave me exactly the truth I needed and none of the comfort I wanted.",mixed,mixed_polarity
+85,"The show was overproduced, overlong, and somehow worth watching.",mixed,mixed_polarity
+86,"I regretted buying the ticket until the last twenty minutes.",mixed,reversal_mixed
+87,"The new office is farther away, but I finally like coming to work.",mixed,mixed_polarity
+88,"The book is uneven, frustrating, and full of lines I underlined.",mixed,mixed_polarity
+89,"The lesson was painful enough to be useful.",mixed,bittersweet_mixed
+90,"I miss the old version, although this one is clearly better.",mixed,mixed_polarity
+91,"The food was too spicy for me and too good to stop eating.",mixed,mixed_polarity
+92,"Their honesty was refreshing and mildly devastating.",mixed,mixed_polarity
+93,"I would not recommend the experience, but I would not erase it either.",mixed,mixed_polarity
+94,"The product feels cheap in the hand and premium in the results.",mixed,mixed_polarity
+95,"We lost the game, but for the first time it felt like progress.",mixed,mixed_polarity
+96,"The room was noisy, yet I slept better there than at home.",mixed,mixed_polarity
+97,"Her advice stung, then saved me weeks of mistakes.",mixed,mixed_polarity
+98,"The launch was chaotic, but the customers loved it.",mixed,mixed_polarity
+99,"I laughed at the review and still could not tell whether it was praise.",mixed,ambiguity
+100,"The ending disappointed me just enough to make the whole story memorable.",mixed,bittersweet_mixed

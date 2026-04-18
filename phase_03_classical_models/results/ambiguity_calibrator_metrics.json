@@ -1,0 +1,44 @@
+{
+  "model": "AmbiguityCalibrator",
+  "artifact": "/Users/rajvivan/Library/Mobile Documents/com~apple~CloudDocs/CUD UNIVERSITY/01 - CUD - SEMESTER 01 /Machine Learning/FINAL TERM PROJECT/sentiment_social_media_project_enhanced/sentiment_social_media_project_enhanced/phase_03_classical_models/results/ambiguity_calibrator.joblib",
+  "base_rows": 20,
+  "stress_rows": 120,
+  "stress_rows_after_oversampling": 960,
+  "stress_training_macro_f1": 1.0,
+  "classes": [
+    "negative",
+    "neutral",
+    "positive",
+    "mixed"
+  ],
+  "sources": [
+    "advanced_sentiment_test",
+    "ambiguity_stress"
+  ],
+  "phenomena": [
+    "ambiguity",
+    "backhanded_compliment",
+    "backhanded_positive",
+    "bittersweet_mixed",
+    "bittersweet_positive",
+    "comparative_trap",
+    "contextual_negative",
+    "contextual_neutral",
+    "contextual_positive",
+    "contrast_positive",
+    "irony",
+    "litotes",
+    "mixed_polarity",
+    "mixed_signal",
+    "neutral_statement",
+    "partial_positive",
+    "qualified_neutral",
+    "qualified_positive",
+    "reversal_mixed",
+    "reversal_positive",
+    "sarcasm",
+    "thwarted_expectation",
+    "tradeoff_positive",
+    "understated_positive"
+  ]
+}

@@ -1,0 +1,21 @@
+text,label,source,label_name,split
+I love this product so much,positive,sample_fallback,positive,train
+I am super happy with the service,positive,sample_fallback,positive,train
+The update broke everything,negative,sample_fallback,negative,train
+The design is fine but not exciting,neutral,sample_fallback,neutral,train
+"Amazing update, very smooth and fast",positive,sample_fallback,positive,train
+Absolutely fantastic experience today,positive,sample_fallback,positive,train
+This app is terrible and keeps crashing,negative,sample_fallback,negative,train
+This is the worst purchase I made,negative,sample_fallback,negative,train
+The experience is neither good nor bad,neutral,sample_fallback,neutral,train
+It is acceptable for now,neutral,sample_fallback,neutral,train
+Worst customer support ever,negative,sample_fallback,negative,train
+Love the color scheme and speed,positive,sample_fallback,positive,train
+It is okay and works as expected,neutral,sample_fallback,neutral,train
+This is disappointing and frustrating,negative,sample_fallback,negative,validation
+Really impressed with the improvements,positive,sample_fallback,positive,validation
+The feature is useful but still basic,neutral,sample_fallback,neutral,validation
+Bad performance after the patch,negative,sample_fallback,negative,test
+What a wonderful release,positive,sample_fallback,positive,test
+"Nothing special, it is just average",neutral,sample_fallback,neutral,test
+I hate the new layout,negative,sample_fallback,negative,test

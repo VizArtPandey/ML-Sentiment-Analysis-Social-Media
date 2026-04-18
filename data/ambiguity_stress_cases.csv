@@ -1,0 +1,21 @@
+text,label_name,phenomenon
+"This movie was so bad that it actually became the highlight of my entire week.",positive,backhanded_positive
+"So bad it was entertaining enough to save the whole night.",positive,backhanded_positive
+"The game was awful in a way that made it the funniest part of my night.",positive,backhanded_positive
+"The acting was terrible, but somehow it made the show unforgettable in the best way.",positive,backhanded_positive
+"I had high hopes for the steak, but it tasted like a flip-flop that had been left in the sun for three days.",negative,thwarted_expectation
+"I expected dinner to be amazing, but the pasta tasted like wet cardboard.",negative,thwarted_expectation
+"I was excited for the app, but it crashed before I could log in.",negative,thwarted_expectation
+"The trailer looked promising, but the movie felt like two hours of waiting for something to happen.",negative,thwarted_expectation
+"Oh great, another software update. Because I definitely did not have enough bugs to deal with already.",negative,sarcasm
+"Great, another password reset because my account definitely needed more problems.",negative,sarcasm
+"Amazing, another delay, just what I needed today.",negative,sarcasm
+"Fantastic, the checkout failed again and now my cart is empty.",negative,sarcasm
+"The service was not exactly what I would call subpar, but it was not particularly impressive either.",neutral,litotes
+"The presentation was not bad, but not memorable either.",neutral,litotes
+"Not exactly terrible, not exactly good.",neutral,litotes
+"The product is not awful, but it is not impressive enough to recommend.",neutral,litotes
+"The sequel makes the original look like a masterpiece of cinematic history.",negative,comparative_trap
+"This new version makes the old broken version look polished.",negative,comparative_trap
+"The replacement makes the original seem flawless.",negative,comparative_trap
+"The redesign makes last year's clunky layout look elegant.",negative,comparative_trap
