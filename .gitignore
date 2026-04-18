@@ -22,6 +22,7 @@ ENV/
 *.keras
 *.pkl
 *.joblib
+!phase_03_classical_models/results/ambiguity_calibrator.joblib
 *.bin
 *.pt
 *.pth

@@ -51,7 +51,7 @@ POSITIVE_TERMS = {
 }
 NEGATIVE_TERMS = {
     "awful", "bad", "broke", "broken", "bugs", "cancelled", "clunky",
-    "crashed", "delay", "delayed", "empty", "failed", "flip", "flop",
+    "chaotic", "crashed", "delay", "delayed", "empty", "failed", "flip", "flop",
     "frustrating", "hate", "hated", "horrible", "mess", "noisy",
     "painful", "problems", "regret", "regretted", "ruin", "ruined",
     "stressful", "subpar", "sun", "terrible", "waiting", "worst",
@@ -109,7 +109,7 @@ def _rule_match(text: str) -> RuleResult | None:
         if tail and (_term_count(tail, NEGATIVE_TERMS) > 0 or "tasted like" in tail or "ruined everything" in tail):
             return RuleResult("negative", 0.9, _scores("negative", 0.9))
 
-    if re.search(r"\b(hated|terrible|mess|cold|bored|regretted|miss|lost|noisy|cheap|stung|disappointed)\b", clean):
+    if re.search(r"\b(hated|terrible|mess|chaotic|cold|bored|regretted|miss|lost|noisy|cheap|stung|disappointed)\b", clean):
         if re.search(r"\b(loved|want to go back|worth watching|clearly better|too good|premium|progress|slept better|saved me|customers loved|memorable)\b", clean):
             return RuleResult("mixed", 0.82, _scores("mixed", 0.82, secondary="neutral"))
 
