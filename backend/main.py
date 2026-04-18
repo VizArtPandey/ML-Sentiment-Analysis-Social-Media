@@ -256,6 +256,20 @@ def _twitter_error_detail(response: requests.Response) -> str:
     return payload.get("detail") or payload.get("title") or f"X API request failed with status {response.status_code}."
 
 
+def _should_fallback_for_twitter_error(status_code: int, detail: str) -> bool:
+    """Use local output when X access is valid but unavailable due to plan limits."""
+    lowered = detail.lower()
+    limit_markers = (
+        "does not have any credits",
+        "no credits",
+        "usage cap",
+        "quota",
+        "rate limit",
+        "too many requests",
+    )
+    return status_code in {402, 403, 429} or any(marker in lowered for marker in limit_markers)
+
+
 def _sentiment_result(raw: dict, key: str) -> dict | None:
     data = raw.get(key)
     if not data:
@@ -338,7 +352,14 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
         raise HTTPException(status_code=502, detail=f"Could not reach X API: {exc}") from exc
 
     if response.status_code >= 400:
-        raise HTTPException(status_code=response.status_code, detail=_twitter_error_detail(response))
+        detail = _twitter_error_detail(response)
+        if _should_fallback_for_twitter_error(response.status_code, detail):
+            return _fallback_hashtag_eval(
+                hashtag,
+                n,
+                "X/Twitter could not return live posts because the account has no available API credits or quota. Showing local timestamped fallback posts.",
+            )
+        raise HTTPException(status_code=response.status_code, detail=detail)
 
     payload = response.json()
     users = {

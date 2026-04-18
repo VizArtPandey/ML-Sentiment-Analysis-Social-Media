@@ -46,11 +46,13 @@ export default function HistoryPanel({ history }) {
     <div className="card p-5 sm:p-6 animate-slide-up">
       <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
         <div>
-          <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">Recent Analyses</h3>
-          <p className="text-sm text-slate-500 mt-1">{history.length} in this session</p>
+          <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">Session Analysis History</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            {history.length} in this session · newest result appears first
+          </p>
         </div>
-        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Latest first
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">
+          Expand a row for model-by-model output
         </div>
       </div>
 
@@ -86,7 +88,7 @@ export default function HistoryPanel({ history }) {
                         {item.timestamp}
                       </span>
                       <span className="rounded-full border border-white/80 bg-white/80 px-2.5 py-1 shadow-sm">
-                        {resultCount} model outputs
+                        {resultCount} models compared
                       </span>
                     </div>
                   </div>
@@ -105,22 +107,8 @@ export default function HistoryPanel({ history }) {
                   </div>
 
                   <div className="flex flex-wrap justify-start gap-1.5 lg:justify-end">
-                    {MODEL_KEYS.map(({ key, short }) => {
-                    const r = item.results?.[key]
-                    if (!r) return null
-                    return (
-                        <span
-                          key={key}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-[11px] font-black text-slate-600 shadow-sm"
-                          title={`${key}: ${r.label}`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${LABEL_DOT[r.label] ?? 'bg-slate-300'}`} />
-                          {short}
-                        </span>
-                    )
-                  })}
-                    <span className="inline-flex items-center rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-[11px] font-black text-slate-500 shadow-sm">
-                      {isExp ? 'Collapse' : 'Details'}
+                    <span className="inline-flex items-center rounded-full border border-white/80 bg-white/80 px-3 py-1.5 text-[11px] font-black text-slate-500 shadow-sm">
+                      {isExp ? 'Hide model details' : 'View model details'}
                     </span>
                   </div>
                 </div>
