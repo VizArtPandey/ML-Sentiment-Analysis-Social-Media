@@ -25,6 +25,11 @@ export async function healthCheck() {
   return data
 }
 
+export async function predictBatch(texts, models = ['all']) {
+  const { data } = await client.post('/predict/batch', { texts, models })
+  return data
+}
+
 export async function getLiveEval(n = 10, hashtag = '', bearerToken = '') {
   const params = { n }
   if (hashtag) params.hashtag = hashtag

@@ -4,6 +4,7 @@ import ModelSelector  from '../components/ModelSelector'
 import ModelComparison from '../components/ModelComparison'
 import AttentionHeatmap from '../components/AttentionHeatmap'
 import HistoryPanel   from '../components/HistoryPanel'
+import BatchAnalysis  from '../components/BatchAnalysis'
 import { predictAll } from '../lib/api'
 
 function mockPredict(text) {
@@ -117,6 +118,7 @@ function SessionStats({ history }) {
 }
 
 export default function Home() {
+  const [mode, setMode]               = useState('single') // 'single' | 'batch'
   const [loading, setLoading]         = useState(false)
   const [results, setResults]         = useState(null)
   const [modelMode, setModelMode]     = useState('all')
@@ -156,49 +158,87 @@ export default function Home() {
     : null
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
-      {/* Hero gradient zone */}
-      <div className="hero-gradient -mx-4 px-4 pt-4 pb-10 rounded-3xl">
-        <HeroInput
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          loading={loading}
-          hasOutput={Boolean(results || history.length || error)}
-        />
+    <div className="max-w-6xl mx-auto px-4 py-12 space-y-10">
+      {/* Mode Switcher */}
+      <div className="flex justify-center">
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-2xl">
+          <button
+            onClick={() => setMode('single')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              mode === 'single'
+                ? 'bg-white shadow text-violet-700 scale-105'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span>✏️</span> Single Analysis
+          </button>
+          <button
+            onClick={() => setMode('batch')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              mode === 'batch'
+                ? 'bg-white shadow text-violet-700 scale-105'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span>📄</span> Batch CSV
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <div className="max-w-xl mx-auto flex items-center gap-2 px-4 py-3 rounded-xl
-                        bg-red-50 border border-red-200 text-red-700 text-sm">
-          <span>⚠️</span> {error}
+      {mode === 'batch' ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-slate-800">Batch CSV Analysis</h2>
+            <p className="text-sm text-slate-400 mt-1">Upload a CSV, run all 5 models across every row, and export results.</p>
+          </div>
+          <BatchAnalysis />
         </div>
-      )}
+      ) : (
+        <>
+          {/* Hero gradient zone */}
+          <div className="hero-gradient -mx-4 px-4 pt-4 pb-10 rounded-3xl">
+            <HeroInput
+              onSubmit={handleSubmit}
+              onReset={handleReset}
+              loading={loading}
+              hasOutput={Boolean(results || history.length || error)}
+            />
+          </div>
 
-      {/* ── 1. Analyzed Text — prominent, always first ── */}
-      {analyzedText && filteredResults && (
-        <AnalyzedTextBanner text={analyzedText} results={results} />
-      )}
-
-      {/* ── 2. Current result + model details ── */}
-      {filteredResults && (
-        <div className="space-y-8">
-          <ModelSelector selected={modelMode} onChange={setModelMode} />
-          <ModelComparison results={filteredResults} />
-
-          {attention && (modelMode === 'all' || modelMode === 'bilstm') && (
-            <AttentionHeatmap tokens={attention.tokens} weights={attention.weights}
-                              label={results?.bilstm?.label} />
+          {error && (
+            <div className="max-w-xl mx-auto flex items-center gap-2 px-4 py-3 rounded-xl
+                            bg-red-50 border border-red-200 text-red-700 text-sm">
+              <span>⚠️</span> {error}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* ── 3. Session Summary + Recent Analyses ── */}
-      {history.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="section-title text-center">Session Summary</h3>
-          <SessionStats history={history} />
-          <HistoryPanel history={history} />
-        </div>
+          {/* ── 1. Analyzed Text — prominent, always first ── */}
+          {analyzedText && filteredResults && (
+            <AnalyzedTextBanner text={analyzedText} results={results} />
+          )}
+
+          {/* ── 2. Current result + model details ── */}
+          {filteredResults && (
+            <div className="space-y-8">
+              <ModelSelector selected={modelMode} onChange={setModelMode} />
+              <ModelComparison results={filteredResults} />
+
+              {attention && (modelMode === 'all' || modelMode === 'bilstm') && (
+                <AttentionHeatmap tokens={attention.tokens} weights={attention.weights}
+                                  label={results?.bilstm?.label} />
+              )}
+            </div>
+          )}
+
+          {/* ── 3. Session Summary + Recent Analyses ── */}
+          {history.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="section-title text-center">Session Summary</h3>
+              <SessionStats history={history} />
+              <HistoryPanel history={history} />
+            </div>
+          )}
+        </>
       )}
     </div>
   )

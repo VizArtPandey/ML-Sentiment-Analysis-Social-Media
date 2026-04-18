@@ -1,6 +1,6 @@
-const MODEL_ORDER  = ['calibrated', 'vader', 'lr', 'rf', 'svm', 'bilstm']
+const MODEL_ORDER  = ['vader', 'lr', 'rf', 'svm', 'bilstm']
 const RAW_MODELS    = ['vader', 'lr', 'rf', 'svm', 'bilstm']
-const MODEL_LABELS = { calibrated: 'Calibrated', vader: 'VADER', lr: 'LR', rf: 'RF', svm: 'SVM', bilstm: 'BiLSTM' }
+const MODEL_LABELS = { vader: 'VADER', lr: 'LR', rf: 'RF', svm: 'SVM', bilstm: 'BiLSTM' }
 
 const CFG = {
   positive: {
@@ -44,49 +44,58 @@ export default function ConsensusCard({ results }) {
   const visibleModels = MODEL_ORDER.filter((k) => results[k])
   if (!visibleModels.length) return null
 
+  // Model F1 weights (BiLSTM best → VADER weakest for ML tasks)
+  const MODEL_WEIGHT = { bilstm: 1.4, svm: 1.2, lr: 1.1, rf: 1.0, vader: 0.8 }
+
   const weightedVotes = {}
   const rawVotes = {}
   rawModels.forEach((k) => {
     const lbl  = results[k].label
     const conf = results[k].confidence ?? 0.5
-    weightedVotes[lbl] = (weightedVotes[lbl] || 0) + conf
+    const w    = MODEL_WEIGHT[k] ?? 1.0
+    weightedVotes[lbl] = (weightedVotes[lbl] || 0) + conf * w
     rawVotes[lbl]      = (rawVotes[lbl]      || 0) + 1
   })
 
   const sorted = Object.entries(weightedVotes).sort((a, b) => b[1] - a[1])
-  let rawLabel = sorted[0]?.[0] ?? results.calibrated?.label
+  let label = sorted[0]?.[0]
 
-  if (sorted.length > 1 && sorted[0][1] - sorted[1][1] < 0.05 && results['bilstm']) {
-    rawLabel = results['bilstm'].label
+  // Tiebreak: if top two within 10% of total, defer to highest-confidence single model
+  if (sorted.length > 1) {
+    const totalWeight = sorted.reduce((s, [, v]) => s + v, 0)
+    if ((sorted[0][1] - sorted[1][1]) / totalWeight < 0.10) {
+      const bestModel = rawModels.reduce((best, k) =>
+        (results[k]?.confidence ?? 0) > (results[best]?.confidence ?? 0) ? k : best, rawModels[0])
+      label = results[bestModel]?.label ?? label
+    }
   }
 
-  const label = results.calibrated?.label ?? rawLabel
   if (!label) return null
 
   const cfg       = CFG[label] ?? CFG.neutral
   const count     = rawVotes[label] || 0
   const agreement = rawModels.length ? Math.round((count / rawModels.length) * 100) : 100
-  const finalConf = results.calibrated?.confidence ?? results[rawLabel]?.confidence ?? 0
-  const avgConf   = rawModels.length
+
+  // Final confidence = average confidence of models that agree with the consensus label
+  const agreeingModels = rawModels.filter(k => results[k]?.label === label)
+  const finalConf = agreeingModels.length
+    ? agreeingModels.reduce((s, k) => s + (results[k]?.confidence ?? 0), 0) / agreeingModels.length
+    : 0
+
+  const avgConf = rawModels.length
     ? rawModels.reduce((s, k) => s + (results[k]?.confidence ?? 0), 0) / rawModels.length
     : finalConf
-  const differsFromRaw = rawLabel && rawLabel !== label
 
   return (
     <div className={`rounded-2xl border-2 p-5 sm:p-6 animate-fade-in ${cfg.bg} ${cfg.border}`}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-5">
         {/* Verdict */}
         <div className="shrink-0 text-center sm:text-left">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Final Calibrated Verdict</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Consensus Verdict</p>
           <div className={`text-4xl font-extrabold capitalize ${cfg.label}`}>{label}</div>
           <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1 sm:justify-start">
             <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
             <span className="text-xs text-slate-500">{count} of {rawModels.length || visibleModels.length} raw models agree</span>
-            {differsFromRaw && (
-              <span className="text-xs font-bold text-slate-500">
-                · raw vote: <span className="capitalize">{rawLabel}</span>
-              </span>
-            )}
           </div>
         </div>
 
