@@ -69,3 +69,4 @@ phase_05_react_ui/.vite/
 *.log
 logs/
 phase_03_classical_models/results/rf_model.joblib
+.claude/
