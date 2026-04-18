@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 
 from src.config import TRANSFORMER_LOCAL_ONLY, TRANSFORMER_MODEL_NAME

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Fit Keras Tokenizer + pad sequences; save tokenizer.pkl; plot sequence-length histogram."""
 import sys
 from pathlib import Path

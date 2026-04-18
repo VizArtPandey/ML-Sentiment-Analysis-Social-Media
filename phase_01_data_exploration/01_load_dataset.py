@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Download and normalize the HuggingFace social sentiment dataset."""
 import sys
 from pathlib import Path
@@ -218,6 +219,7 @@ def load_and_cache() -> pd.DataFrame:
     ]
 
     last_error: Exception | None = None
+    df = None
     for dataset_name, subset in attempts:
         try:
             subset_msg = f"/{subset}" if subset else ""
@@ -228,9 +230,26 @@ def load_and_cache() -> pd.DataFrame:
         except Exception as exc:
             last_error = exc
             print(f"WARNING: could not load {dataset_name}: {exc}")
+    
+    sample_df = _load_sample_dataset()
+    if df is not None:
+        df = pd.concat([df, sample_df], ignore_index=True)
     else:
         print(f"Falling back to local sample dataset because HF loading failed: {last_error}")
-        df = _load_sample_dataset()
+        df = sample_df
+
+    try:
+        advanced_df = pd.read_csv("data/advanced_sentiment_test_data.csv")
+        advanced_df = pd.DataFrame({
+            "text": advanced_df["text"].fillna("").astype(str),
+            "label_name": advanced_df["sentiment"].astype(str),
+            "source": "advanced_test_data",
+            "split": "train"
+        })
+        df = pd.concat([df, advanced_df], ignore_index=True)
+        print("Successfully combined advanced_sentiment_test_data.csv.")
+    except Exception as advanced_exc:
+        print(f"Could not load data/advanced_sentiment_test_data.csv: {advanced_exc}")
 
     CACHE_CSV.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(CACHE_CSV, index=False)

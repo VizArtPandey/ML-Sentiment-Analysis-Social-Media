@@ -1,13 +1,20 @@
 # Sentiment Analysis on Social Media — End-to-End ML Project
 
-> **Multi-model pipeline:** VADER · TF-IDF + Logistic Regression · Random Forest · SVM · Bidirectional LSTM · Calibrated ambiguity layer  
+> **Multi-model pipeline:** VADER · TF-IDF + Logistic Regression · Random Forest · SVM · Bidirectional LSTM with Attention · Calibrated ambiguity layer  
 > **Stack:** Python 3.10 · Keras/TF · FastAPI · React 18 · TailwindCSS · Gradio · HuggingFace Datasets
+
+---
+
+## 🚀 Recent Updates
+- **BiLSTM Attention Visualization:** Fixed the deep learning inference to correctly extract intermediate graph output layers from the functional Keras `Model`, passing token-wise influence mathematically to the React heatmaps. True math-backed metrics!
+- **Fallback Simulation for Live Evals:** Simulated Twitter API generation allows the `/live-eval` dashboard to gracefully fall back on highly realistic, dynamically generated tweets (powered by random choice dictionaries) without getting IP banned. 
+- **Classical Model Retraining:** Retrained Random Forest, Logistic Regression, and calibrated SVM endpoints.
 
 ---
 
 ## Project Structure
 
-```
+```text
 sentiment_social_media_project_enhanced/
 ├── config.py                          ← single source of truth for all hyperparams
 ├── requirements.txt                   ← all deps pinned
@@ -16,11 +23,11 @@ sentiment_social_media_project_enhanced/
 ├── phase_01_data_exploration/         ← EDA: distributions, lengths, word freq
 ├── phase_02_feature_engineering/      ← TF-IDF, Word2Vec, Keras tokenizer
 ├── phase_03_classical_models/         ← VADER + LR + RF + SVM baselines
-├── phase_04_rnn_bilstm/               ← Bidirectional LSTM with Attention
-├── phase_05_react_ui/                 ← React 18 + TailwindCSS + Recharts UI
+├── phase_04_rnn_bilstm/               ← Bidirectional LSTM with Attention (Live Graph Extracted)
+├── phase_05_react_ui/                 ← React 18 + TailwindCSS + Recharts UI + Fallback Scrapers
 ├── phase_06_huggingface_deploy/       ← Gradio app + Dockerfile for HF Spaces
 │
-├── backend/                           ← FastAPI: /predict /metrics /history
+├── backend/                           ← FastAPI: /predict /metrics /live-eval /history
 ├── data/advanced_sentiment_test_data.csv ← sarcasm/ambiguity/mixed-polarity test data
 └── src/                               ← shared Python modules
 ```

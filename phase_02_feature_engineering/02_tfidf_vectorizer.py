@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Fit TF-IDF on training data, pickle it, plot top features per class."""
 import sys
 from pathlib import Path

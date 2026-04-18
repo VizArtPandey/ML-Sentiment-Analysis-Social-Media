@@ -1,6 +1,5 @@
 const MODELS = [
   { id: 'all',    label: 'All Models',         desc: 'Compare suite',      icon: '⚡', color: 'indigo' },
-  { id: 'calibrated', label: 'Calibrated',      desc: 'Ambiguity-aware',    icon: '🎯', color: 'slate'  },
   { id: 'vader',  label: 'VADER',              desc: 'Rule-based NLP',     icon: '📏', color: 'red'    },
   { id: 'lr',     label: 'Logistic Reg.',       desc: 'TF-IDF + GridSearch',icon: '📈', color: 'blue'   },
   { id: 'rf',     label: 'Random Forest',       desc: '300-tree ensemble',  icon: '🌲', color: 'orange' },
@@ -10,7 +9,6 @@ const MODELS = [
 
 const ACTIVE_COLORS = {
   indigo:  'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200',
-  slate:   'bg-slate-900  border-slate-900  text-white shadow-md shadow-slate-200',
   red:     'bg-red-600    border-red-600    text-white shadow-md shadow-red-100',
   blue:    'bg-blue-600   border-blue-600   text-white shadow-md shadow-blue-100',
   orange:  'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100',

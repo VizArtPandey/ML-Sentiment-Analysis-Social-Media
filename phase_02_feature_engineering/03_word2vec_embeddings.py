@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Train Word2Vec embeddings and produce a t-SNE 2-D scatter plot."""
 import sys
 from pathlib import Path
@@ -118,11 +119,9 @@ def main():
     anchor_neutral  = ["okay", "fine", "normal", "average", "moderate", "regular"]
     anchor_positive = ["love", "great", "amazing", "awesome", "good", "happy", "excellent"]
 
-    word_label_map = (
-        {w: "negative" for w in anchor_negative} |
-        {w: "neutral"  for w in anchor_neutral}  |
-        {w: "positive" for w in anchor_positive}
-    )
+    word_label_map = {w: "negative" for w in anchor_negative}
+    word_label_map.update({w: "neutral"  for w in anchor_neutral})
+    word_label_map.update({w: "positive" for w in anchor_positive})
 
     if Word2Vec is None:
         print("gensim is not installed; creating fallback TF-IDF term t-SNE plot.")

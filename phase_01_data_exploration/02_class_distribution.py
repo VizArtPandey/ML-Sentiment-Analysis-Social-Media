@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Plot 1: bar chart  |  Plot 2: pie chart — class distribution."""
 import sys
 from pathlib import Path

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pydantic import BaseModel, Field, constr
 from typing import Optional
 
@@ -29,7 +30,6 @@ class AttentionData(BaseModel):
 
 class PredictResponse(BaseModel):
     text: str
-    calibrated: Optional[SentimentResult] = None
     vader:     Optional[SentimentResult] = None
     lr:        Optional[SentimentResult] = None
     rf:        Optional[SentimentResult] = None
@@ -47,7 +47,6 @@ class MetricsResponse(BaseModel):
 class HistoryItem(BaseModel):
     request_id: str
     text: str
-    calibrated: Optional[SentimentResult] = None
     vader:     Optional[SentimentResult] = None
     lr:        Optional[SentimentResult] = None
     rf:        Optional[SentimentResult] = None

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Evaluate the BiLSTM: F1 + ROC vs classical models, confusion matrix."""
 import sys
 from pathlib import Path

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Plot 1: character-length histograms  |  Plot 2: word-count box plots per class."""
 import sys
 from pathlib import Path

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Load all models once at FastAPI startup; expose a unified predict interface."""
 from pathlib import Path
 import sys
@@ -7,9 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import logging
 import numpy as np
 
-from config import (AMBIGUITY_CALIBRATOR_PATH, BILSTM_MODEL_PATH, MAX_SEQ_LEN, PHASE02_ARTIFACTS,
-                    PHASE03_RESULTS, SENTIMENT_LABELS)
-from src.ambiguity_calibrator import calibrate_sentiment
+from config import BILSTM_MODEL_PATH, MAX_SEQ_LEN, PHASE02_ARTIFACTS, PHASE03_RESULTS, SENTIMENT_LABELS
 from src.preprocess import preprocess_social_text
 
 logger = logging.getLogger(__name__)
@@ -39,15 +38,6 @@ def _try_load_svm():
     return _try_load_joblib_model("svm_model.joblib", "SVM")
 
 
-def _try_load_ambiguity_calibrator():
-    try:
-        import joblib
-        return joblib.load(AMBIGUITY_CALIBRATOR_PATH) if AMBIGUITY_CALIBRATOR_PATH.exists() else None
-    except Exception as e:
-        logger.warning(f"Ambiguity calibrator load failed: {e}")
-        return None
-
-
 def _try_load_joblib_model(filename: str, label: str):
     try:
         import joblib
@@ -71,8 +61,9 @@ def _try_load_bilstm():
 
         tokenizer = joblib.load(tok_path)
 
+        keras_path = BILSTM_MODEL_PATH.with_suffix(".keras")
         h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
-        model_paths = [path for path in (BILSTM_MODEL_PATH, h5_path) if path.exists()]
+        model_paths = [path for path in (keras_path, h5_path) if path.exists()]
         if not model_paths:
             logger.warning("BiLSTM model not found. Run: python -m phase_04_rnn_bilstm.02_train_rnn")
             return None, None
@@ -111,7 +102,6 @@ def startup():
     _models["lr"] = _try_load_lr()
     _models["rf"] = _try_load_rf()
     _models["svm"] = _try_load_svm()
-    _models["ambiguity_calibrator"] = _try_load_ambiguity_calibrator()
 
     bilstm, tokenizer = _try_load_bilstm()
     _models["bilstm"]    = bilstm
@@ -188,8 +178,7 @@ def _build_attention_model(model):
     import tensorflow as tf
 
     attn_layer = model.get_layer("attention")
-    bilstm_out = model.get_layer("bilstm").output
-    _, attn_w = attn_layer(bilstm_out)
+    attn_w = attn_layer.output[1]
     return tf.keras.Model(inputs=model.inputs, outputs=[model.output, attn_w])
 
 
@@ -254,5 +243,4 @@ def predict_all(text: str) -> dict:
         "bilstm":    bilstm_res,
         "attention": attn_res,
     }
-    outputs["calibrated"] = calibrate_sentiment(text, outputs, _models.get("ambiguity_calibrator"))
     return outputs

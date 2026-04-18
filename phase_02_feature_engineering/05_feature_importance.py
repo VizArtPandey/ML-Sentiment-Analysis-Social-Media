@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Chi-squared feature ranking; plot top-30 features bar chart."""
 import sys
 from pathlib import Path

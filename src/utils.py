@@ -1,3 +1,4 @@
+from __future__ import annotations
 from src.config import RISK_CONFIDENCE_THRESHOLD, SENTIMENT_LABELS
 
 

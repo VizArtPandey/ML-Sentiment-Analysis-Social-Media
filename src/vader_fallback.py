@@ -1,3 +1,5 @@
+from __future__ import annotations
+from __future__ import annotations
 """Small deterministic fallback when vaderSentiment is unavailable locally."""
 import re
 

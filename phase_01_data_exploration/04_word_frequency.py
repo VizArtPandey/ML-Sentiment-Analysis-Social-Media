@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Plot 1: WordCloud per class  |  Plot 2: top-20 words bar chart per class."""
 import sys
 from pathlib import Path

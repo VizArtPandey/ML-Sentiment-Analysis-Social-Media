@@ -47,12 +47,22 @@ export default function ConsensusCard({ results }) {
   // Model F1 weights (BiLSTM best → VADER weakest for ML tasks)
   const MODEL_WEIGHT = { bilstm: 1.4, svm: 1.2, lr: 1.1, rf: 1.0, vader: 0.8 }
 
+  // If VADER is highly confident AND more confident than the best ML model by ≥15pp,
+  // trust VADER — it means VADER has a strong signal and ML models are uncertain.
+  const mlModels  = rawModels.filter(k => k !== 'vader')
+  const vaderConf = results['vader']?.confidence ?? 0
+  const maxMlConf = mlModels.length
+    ? Math.max(...mlModels.map(k => results[k]?.confidence ?? 0))
+    : 0
+  const deferToVader = results['vader'] && vaderConf >= 0.75 && vaderConf > maxMlConf + 0.15
+
   const weightedVotes = {}
   const rawVotes = {}
   rawModels.forEach((k) => {
     const lbl  = results[k].label
     const conf = results[k].confidence ?? 0.5
-    const w    = MODEL_WEIGHT[k] ?? 1.0
+    // If deferring to VADER, zero-weight all ML models
+    const w    = deferToVader ? (k === 'vader' ? 5.0 : 0) : (MODEL_WEIGHT[k] ?? 1.0)
     weightedVotes[lbl] = (weightedVotes[lbl] || 0) + conf * w
     rawVotes[lbl]      = (rawVotes[lbl]      || 0) + 1
   })
@@ -61,7 +71,7 @@ export default function ConsensusCard({ results }) {
   let label = sorted[0]?.[0]
 
   // Tiebreak: if top two within 10% of total, defer to highest-confidence single model
-  if (sorted.length > 1) {
+  if (!deferToVader && sorted.length > 1) {
     const totalWeight = sorted.reduce((s, [, v]) => s + v, 0)
     if ((sorted[0][1] - sorted[1][1]) / totalWeight < 0.10) {
       const bestModel = rawModels.reduce((best, k) =>

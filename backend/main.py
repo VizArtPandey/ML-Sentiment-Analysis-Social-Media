@@ -1,3 +1,5 @@
+from __future__ import annotations
+import typing
 """FastAPI backend — /predict /metrics /history /health."""
 from pathlib import Path
 import sys
@@ -8,6 +10,7 @@ import logging
 import os
 import random
 import re
+import asyncio
 from collections import deque
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
@@ -63,7 +66,7 @@ app = FastAPI(
     description="Sentiment Analysis API - VADER, classical ML, and BiLSTM",
 )
 
-MODEL_KEYS = {"calibrated", "vader", "lr", "rf", "svm", "bilstm"}
+MODEL_KEYS = {"vader", "lr", "rf", "svm", "bilstm"}
 TWITTER_RECENT_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 TWITTER_BEARER_TOKEN_ENV = ("X_BEARER_TOKEN", "TWITTER_BEARER_TOKEN")
 HASHTAG_RE = re.compile(r"^[A-Za-z0-9_]{1,100}$")
@@ -133,7 +136,6 @@ def predict(req: PredictRequest):
     response = PredictResponse(
         text=text,
         request_id=request_id,
-        calibrated=to_result("calibrated"),
         vader=to_result("vader"),
         lr=to_result("lr"),
         rf=to_result("rf"),
@@ -145,7 +147,6 @@ def predict(req: PredictRequest):
     HISTORY.append(HistoryItem(
         request_id=request_id,
         text=text[:120],
-        calibrated=response.calibrated,
         vader=response.vader,
         lr=response.lr,
         rf=response.rf,
@@ -157,7 +158,7 @@ def predict(req: PredictRequest):
     return response
 
 
-@app.post("/api/predict/batch", response_model=list[PredictResponse], tags=["inference"])
+@app.post("/api/predict/batch", response_model=typing.List[PredictResponse], tags=["inference"])
 def predict_batch(req: BatchPredictRequest):
     if len(req.texts) > 200:
         raise HTTPException(status_code=400, detail="Batch size exceeds 200 texts.")
@@ -185,7 +186,7 @@ def metrics():
     )
 
 
-@app.get("/api/history", response_model=list[HistoryItem], tags=["meta"])
+@app.get("/api/history", response_model=typing.List[HistoryItem], tags=["meta"])
 def history():
     return list(HISTORY)
 
@@ -281,37 +282,154 @@ def _sentiment_result(raw: dict, key: str) -> dict | None:
     }
 
 
+_FALLBACK_BANKS = {
+    "positive": {
+        "adj": [
+            "amazing", "incredible", "fantastic", "brilliant", "inspiring",
+            "excellent", "delightful", "outstanding", "impressive", "refreshing",
+            "solid", "underrated", "genuinely good", "thoughtful", "smooth",
+        ],
+        "thought": [
+            "Absolutely loving it so far.",
+            "Best thing I've seen all week.",
+            "Huge step forward for the ecosystem.",
+            "Can't wait to see where this goes.",
+            "Genuinely impressed by the quality.",
+            "Props to the team behind this.",
+            "Finally something that actually works.",
+            "Worth every minute I spent on it.",
+            "Restored a bit of faith honestly.",
+        ],
+    },
+    "negative": {
+        "adj": [
+            "terrible", "awful", "disappointing", "broken", "frustrating",
+            "painful", "horrible", "useless", "half-baked", "sloppy",
+            "exhausting", "overhyped", "tone-deaf", "laggy", "buggy",
+        ],
+        "thought": [
+            "Complete mess right now.",
+            "Seriously considering dropping it.",
+            "Why does this always happen?",
+            "Whoever signed off on this owes an apology.",
+            "Huge waste of time honestly.",
+            "Asked for a refund already.",
+            "Can we get five minutes of competence please.",
+            "Back to the drawing board for them.",
+            "Not touching this again.",
+        ],
+    },
+    "neutral": {
+        "adj": [
+            "expected", "routine", "standard", "ordinary", "unchanged",
+            "typical", "familiar", "nothing new", "predictable", "procedural",
+            "run-of-the-mill", "status-quo",
+        ],
+        "thought": [
+            "Let's see how things develop.",
+            "Waiting to read more before forming an opinion.",
+            "Reporting as I saw it, nothing more.",
+            "Scheduled update, nothing surprising.",
+            "Noted for reference.",
+            "Will revisit next week.",
+            "Numbers tomorrow, not drawing conclusions yet.",
+            "Reading the thread before commenting.",
+            "Same pattern as last quarter.",
+        ],
+    },
+}
+
+_FALLBACK_TEMPLATES = [
+    "{intro} #{tag} is {adj}. {thought}",
+    "Honestly, #{tag} looks {adj} right now — {thought_lower}",
+    "Anyone else noticing #{tag} is {adj}? {thought}",
+    "Hot take: #{tag} is {adj}. {thought}",
+    "Day 2 with #{tag} and it's {adj}. {thought}",
+    "okay, #{tag} really is {adj}… {thought_lower}",
+    "Just spent an hour on #{tag}. Verdict: {adj}. {thought}",
+    "My timeline is full of #{tag} posts. It's {adj}, {thought_lower}",
+    "#{tag} — {adj} start to the week. {thought}",
+    "{intro} #{tag}. Short version: {adj}. {thought}",
+    "Reading threads about #{tag}. {adj} stuff. {thought}",
+    "If you haven't tried #{tag} yet — {adj}. {thought}",
+]
+
+_FALLBACK_INTROS = [
+    "Quick thought on", "Checking out", "Back to", "Revisiting",
+    "Late to", "First impressions of", "Following up on", "Circling back on",
+]
+
+_FALLBACK_AUTHORS = [
+    ("mira_okafor", "Mira Okafor"), ("dev_takeshi", "Takeshi N."),
+    ("noor_s", "Noor Siddiqui"), ("j_romero", "J. Romero"),
+    ("zaynabk", "Zaynab K."), ("_anselm", "Anselm R."),
+    ("priya.r", "Priya R."), ("kai_linde", "Kai Linde"),
+    ("elif_demir", "Elif Demir"), ("oscar.m", "Oscar Mensah"),
+]
+
+
 def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> list[dict]:
+    import random
     tag = _normalize_hashtag(hashtag)
     limit = max(1, min(n, 10))
     now = datetime.now(timezone.utc)
-    templates = [
-        f"#{tag} update is getting a lot of attention today, but people are still waiting for clearer details.",
-        f"Oh great, another #{tag} headline. Because the timeline definitely needed more confusion today.",
-        f"People discussing #{tag} seem cautiously optimistic after the latest reports.",
-        f"The #{tag} conversation is mixed: some useful updates, some frustrating noise.",
-        f"#{tag} is trending again and the reactions are all over the place.",
-        f"I had high hopes for the latest #{tag} news, but the rollout feels messy so far.",
-        f"Not exactly terrible news around #{tag}, but not particularly impressive either.",
-        f"The newest #{tag} posts make yesterday's version look polished.",
-        f"Some genuinely positive momentum around #{tag} today.",
-        f"Hard to call #{tag} good or bad right now; the signal is still developing.",
-    ]
+
+    # Balance polarities across the batch (round-robin then shuffle), so the UI
+    # shows a mix of positive/negative/neutral instead of collapsing to one class.
+    polarity_cycle = ["positive", "negative", "neutral"] * ((limit // 3) + 1)
+    polarities = polarity_cycle[:limit]
+    random.shuffle(polarities)
+
+    # Draw adj / thought / template / author without replacement so a batch of 10
+    # doesn't visibly repeat phrases.
+    pools = {
+        pol: {
+            "adj": random.sample(bank["adj"], k=min(limit, len(bank["adj"]))),
+            "thought": random.sample(bank["thought"], k=min(limit, len(bank["thought"]))),
+        }
+        for pol, bank in _FALLBACK_BANKS.items()
+    }
+    pool_idx = {"positive": 0, "negative": 0, "neutral": 0}
+    templates = random.sample(_FALLBACK_TEMPLATES, k=min(limit, len(_FALLBACK_TEMPLATES)))
+    authors = random.sample(_FALLBACK_AUTHORS, k=min(limit, len(_FALLBACK_AUTHORS)))
+
+    def _next(pol: str, key: str) -> str:
+        pool = pools[pol][key]
+        val = pool[pool_idx[pol] % len(pool)]
+        pool_idx[pol] += 1 if key == "thought" else 0
+        return val
+
     results = []
-    for i, text in enumerate(templates[:limit]):
+    for i in range(limit):
+        pol = polarities[i]
+        adj_pool = pools[pol]["adj"]
+        thought_pool = pools[pol]["thought"]
+        adj = adj_pool[i % len(adj_pool)]
+        thought = thought_pool[i % len(thought_pool)]
+        template = templates[i % len(templates)]
+        intro = random.choice(_FALLBACK_INTROS)
+        text = template.format(
+            tag=tag,
+            adj=adj,
+            thought=thought,
+            thought_lower=thought[0].lower() + thought[1:] if thought else thought,
+            intro=intro,
+        )
+
         raw = model_manager.predict_all(text)
-        timestamp = now - timedelta(minutes=i * 4)
+        timestamp = now - timedelta(minutes=random.randint(1, 120), seconds=random.randint(0, 59))
+        username, display = authors[i % len(authors)]
         results.append({
-            "id": f"fallback-{tag}-{i + 1}",
+            "id": f"fallback-{tag}-{i + 1}-{random.randint(1000, 9999)}",
             "text": text,
             "timestamp": timestamp.isoformat(),
             "hashtag": f"#{tag}",
             "source": "fallback",
             "source_detail": reason,
             "author": {
-                "id": "local-fallback",
-                "name": "Local fallback",
-                "username": "local_fallback",
+                "id": f"local-{username}",
+                "name": display,
+                "username": username,
             },
             "url": None,
             "metrics": {
@@ -320,22 +438,116 @@ def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> list[dict]:
                 "retweet_count": 0,
                 "quote_count": 0,
             },
-            "predictions": {k: _sentiment_result(raw, k) for k in ("calibrated", "vader", "lr", "rf", "svm", "bilstm")},
+            "predictions": {k: _sentiment_result(raw, k) for k in ("vader", "lr", "rf", "svm", "bilstm")},
         })
     return results
 
 
-def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = None) -> list[dict]:
-    token = header_token or _twitter_bearer_token()
-    if not token:
-        return _fallback_hashtag_eval(
-            hashtag,
-            n,
-            "Twitter/X bearer token is not configured. Using local timestamped fallback posts.",
-        )
-
+async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = None) -> list[dict]:
     tag = _normalize_hashtag(hashtag)
     limit = max(1, min(n, 10))
+    twikit_failure: str | None = None
+
+    username = os.getenv("X_USERNAME")
+    email = os.getenv("X_EMAIL")
+    password = os.getenv("X_PASSWORD")
+    auth_token = os.getenv("X_AUTH_TOKEN")
+    ct0 = os.getenv("X_CT0")
+
+    has_browser_cookies = bool(auth_token and ct0)
+    has_password_creds = bool(username and email and password)
+
+    if has_browser_cookies or has_password_creds:
+        try:
+            from twikit import Client as TwikitClient
+        except ImportError:
+            TwikitClient = None
+            logger.warning("twikit not installed — skipping scraper tier. `pip install twikit` to enable.")
+
+        if TwikitClient is not None:
+            try:
+                client = TwikitClient('en-US')
+                cookies_path = Path(__file__).resolve().parent / ".twikit_cookies.json"
+
+                logged_in = False
+
+                # Preferred path: cached cookie jar from a previous successful session.
+                if cookies_path.exists():
+                    try:
+                        client.load_cookies(str(cookies_path))
+                        logged_in = True
+                        logger.info("twikit: loaded cached cookies, skipping login.")
+                    except Exception as cookie_exc:
+                        logger.warning(f"twikit: cached cookies invalid ({cookie_exc}), retrying auth.")
+
+                # Next-best path: browser-exported cookies from the user's own
+                # logged-in X session. Avoids the Cloudflare-guarded login flow.
+                if not logged_in and has_browser_cookies:
+                    try:
+                        client.set_cookies({"auth_token": auth_token, "ct0": ct0})
+                        logged_in = True
+                        logger.info("twikit: using X_AUTH_TOKEN / X_CT0 from env.")
+                        try:
+                            client.save_cookies(str(cookies_path))
+                        except Exception as save_exc:
+                            logger.warning(f"twikit: could not persist cookies: {save_exc}")
+                    except Exception as set_exc:
+                        logger.warning(f"twikit: set_cookies failed ({set_exc}).")
+
+                # Last-resort path: password login. Usually blocked by Cloudflare /
+                # Arkose on fresh sessions — keep it but expect failure.
+                if not logged_in and has_password_creds:
+                    await client.login(
+                        auth_info_1=username,
+                        auth_info_2=email,
+                        password=password,
+                    )
+                    try:
+                        client.save_cookies(str(cookies_path))
+                        logger.info("twikit: saved login cookies for future runs.")
+                    except Exception as save_exc:
+                        logger.warning(f"twikit: could not persist cookies: {save_exc}")
+
+                tweets = await client.search_tweet(f"#{tag}", 'Latest', count=limit)
+
+                results = []
+                for tweet in tweets[:limit]:
+                    raw = model_manager.predict_all(tweet.text)
+                    results.append({
+                        "id": tweet.id,
+                        "text": tweet.text,
+                        "timestamp": tweet.created_at,
+                        "hashtag": f"#{tag}",
+                        "source": "x",
+                        "source_detail": "Tier 1: live X/Twitter recent search via twikit scraper.",
+                        "author": {
+                            "id": tweet.user.id,
+                            "name": tweet.user.name,
+                            "username": tweet.user.screen_name,
+                        },
+                        "url": f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}",
+                        "metrics": {
+                            "like_count": tweet.view_count,
+                            "reply_count": tweet.reply_count,
+                            "retweet_count": tweet.retweet_count,
+                            "quote_count": tweet.quote_count,
+                        },
+                        "predictions": {k: _sentiment_result(raw, k) for k in ("vader", "lr", "rf", "svm", "bilstm")},
+                    })
+                if results:
+                    return results
+            except Exception as e:
+                twikit_failure = str(e)
+                logger.error(f"Twikit scraping failed or blocked by Cloudflare: {e}")
+                logger.warning("Falling through to official X API, then local generator...")
+
+    token = header_token or _twitter_bearer_token()
+    if not token:
+        reason = "Tier 3 (local generator): no X Bearer Token configured."
+        if twikit_failure:
+            reason += f" Tier 1 (twikit) failed: {twikit_failure[:140]}."
+        return _fallback_hashtag_eval(hashtag, n, reason)
+
     params = {
         "query": f"#{tag} -is:retweet lang:en",
         "max_results": 10,
@@ -354,11 +566,13 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
     if response.status_code >= 400:
         detail = _twitter_error_detail(response)
         if _should_fallback_for_twitter_error(response.status_code, detail):
-            return _fallback_hashtag_eval(
-                hashtag,
-                n,
-                "X/Twitter could not return live posts because the account has no available API credits or quota. Showing local timestamped fallback posts.",
+            reason = (
+                f"Tier 3 (local generator): Tier 2 X API returned status {response.status_code}"
+                " (quota/credit/rate-limit)."
             )
+            if twikit_failure:
+                reason += f" Tier 1 (twikit) failed: {twikit_failure[:140]}."
+            return _fallback_hashtag_eval(hashtag, n, reason)
         raise HTTPException(status_code=response.status_code, detail=detail)
 
     payload = response.json()
@@ -381,7 +595,7 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
             "timestamp": tweet.get("created_at"),
             "hashtag": f"#{tag}",
             "source": "x",
-            "source_detail": "Live X/Twitter recent search with public engagement metrics.",
+            "source_detail": "Tier 2: official X API /tweets/search/recent with public engagement metrics.",
             "author": {
                 "id": tweet.get("author_id"),
                 "name": author.get("name"),
@@ -389,18 +603,18 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
             },
             "url": f"https://x.com/{username}/status/{tweet.get('id')}" if username and tweet.get("id") else None,
             "metrics": tweet.get("public_metrics") or {},
-            "predictions": {k: _sentiment_result(raw, k) for k in ("calibrated", "vader", "lr", "rf", "svm", "bilstm")},
+            "predictions": {k: _sentiment_result(raw, k) for k in ("vader", "lr", "rf", "svm", "bilstm")},
         })
 
     return results
 
 
 @app.get("/api/live-eval", tags=["inference"])
-def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
+async def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
     """Return live hashtag results from X, or sample tweet_eval rows without a hashtag."""
     if hashtag:
         header_token = _twitter_header_token(request)
-        return _live_twitter_hashtag_eval(hashtag, n, header_token)
+        return await _live_twitter_hashtag_eval(hashtag, n, header_token)
 
     n = max(1, min(n, 20))
     _ensure_eval_tweets()
@@ -422,7 +636,7 @@ def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
             "text": tweet["text"],
             "ground_truth": tweet["ground_truth"],
             "timestamp": ts.isoformat(),
-            "predictions": {k: _sr(k) for k in ("calibrated", "vader", "lr", "rf", "svm", "bilstm")},
+            "predictions": {k: _sr(k) for k in ("vader", "lr", "rf", "svm", "bilstm")},
         })
 
     results.sort(key=lambda x: x["timestamp"], reverse=True)

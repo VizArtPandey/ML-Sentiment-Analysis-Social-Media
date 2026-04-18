@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Generate token-importance attention heatmap for sample texts."""
 import sys
 from pathlib import Path

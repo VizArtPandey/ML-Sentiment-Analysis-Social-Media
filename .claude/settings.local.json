@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m pip show twikit)",
+      "Bash(.venv/bin/python -m pip show twikit)",
+      "Bash(.venv/bin/python -c \"import twikit; print\\('twikit version:', twikit.__version__\\)\")"
+    ]
+  }
+}

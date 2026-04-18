@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Clean raw tweet text and plot before/after character-length distributions."""
 import sys
 from pathlib import Path

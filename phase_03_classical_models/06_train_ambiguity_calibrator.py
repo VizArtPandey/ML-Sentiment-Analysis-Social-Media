@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Train a lightweight calibrator for ambiguous and sarcastic sentiment cases."""
 import sys
 from pathlib import Path

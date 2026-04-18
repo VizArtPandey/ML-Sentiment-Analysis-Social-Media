@@ -1,3 +1,4 @@
+from __future__ import annotations
 import joblib
 import pandas as pd
 from sklearn.pipeline import Pipeline

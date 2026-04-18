@@ -1,4 +1,4 @@
 class,n_samples,n_null_text,n_empty_text,n_duplicates,avg_char_len,avg_word_count,max_char_len
-negative,7,0,0,0,30.7,5.3,39
-neutral,6,0,0,0,33.5,6.5,38
-positive,7,0,0,0,32.3,5.4,38
+negative,11377,0,0,1,108.4,19.0,184
+neutral,27479,0,0,17,102.0,17.9,200
+positive,21043,0,0,8,103.5,18.5,185

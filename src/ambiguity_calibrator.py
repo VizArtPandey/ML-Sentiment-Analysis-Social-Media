@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Calibrated sentiment for sarcasm, contrast, and other hard linguistic cases."""
 from __future__ import annotations
 

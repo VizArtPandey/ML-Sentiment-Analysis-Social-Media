@@ -45,6 +45,7 @@ data/processed/
 # Environment / secrets
 .env
 .env.*
+backend/.twikit_cookies.json
 *.key
 *.pem
 
@@ -67,3 +68,4 @@ phase_05_react_ui/.vite/
 # Logs
 *.log
 logs/
+phase_03_classical_models/results/rf_model.joblib

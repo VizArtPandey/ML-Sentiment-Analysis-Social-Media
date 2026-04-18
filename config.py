@@ -40,8 +40,8 @@ for _d in [DATA_DIR, MPLCONFIG_DIR, PHASE01_PLOTS, PHASE02_ARTIFACTS,
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
 DATASET_SOURCE = os.getenv("DATASET_SOURCE", "bdstar").strip().lower()
-DATASET_NAME = os.getenv("DATASET_NAME", "bdstar/twitter-sentiment-analysis").strip()
-DATASET_SUBSET = os.getenv("DATASET_SUBSET", "").strip() or None
+DATASET_NAME = os.getenv("DATASET_NAME", "tweet_eval").strip()
+DATASET_SUBSET = os.getenv("DATASET_SUBSET", "sentiment").strip() or None
 DATASET_FALLBACK_NAME = "tweet_eval"
 DATASET_FALLBACK_SUBSET = "sentiment"
 SAMPLE_DATA_CSV = DATA_DIR / "sample_social_sentiment.csv"
@@ -71,7 +71,7 @@ LR_MAX_ITER = _env_int("LR_MAX_ITER", 1500)
 LR_C = _env_float("LR_C", 1.0)
 RF_N_ESTIMATORS = _env_int("RF_N_ESTIMATORS", 300)
 SVM_C = _env_float("SVM_C", 1.0)
-SKLEARN_N_JOBS = _env_int("SKLEARN_N_JOBS", 1)
+SKLEARN_N_JOBS = _env_int("SKLEARN_N_JOBS", -1)
 
 # ── BiLSTM hyperparameters ────────────────────────────────────────────────────
 LSTM_UNITS = _env_int("LSTM_UNITS", 64)
@@ -92,7 +92,7 @@ LR_MODEL_PATH = PHASE03_RESULTS / "lr_model.joblib"
 RF_MODEL_PATH = PHASE03_RESULTS / "rf_model.joblib"
 SVM_MODEL_PATH = PHASE03_RESULTS / "svm_model.joblib"
 AMBIGUITY_CALIBRATOR_PATH = PHASE03_RESULTS / "ambiguity_calibrator.joblib"
-BILSTM_MODEL_PATH = PHASE04_MODELS / "bilstm_best.keras"
+BILSTM_MODEL_PATH = PHASE04_MODELS / "bilstm_best.h5"
 METRICS_SUMMARY_CSV = PHASE03_RESULTS / "metrics_summary.csv"
 
 METRICS_PATH = REPORT_DIR / "metrics.json"

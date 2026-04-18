@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Generate a CSV data-quality report + a duplicate heatmap PNG."""
 import sys
 from pathlib import Path
