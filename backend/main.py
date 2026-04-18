@@ -67,6 +67,7 @@ MODEL_KEYS = {"calibrated", "vader", "lr", "rf", "svm", "bilstm"}
 TWITTER_RECENT_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 TWITTER_BEARER_TOKEN_ENV = ("X_BEARER_TOKEN", "TWITTER_BEARER_TOKEN")
 HASHTAG_RE = re.compile(r"^[A-Za-z0-9_]{1,100}$")
+TOKEN_PLACEHOLDERS = {"", "<hidden>", "your_bearer_token_here", "paste_token_here", "your_token_here"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -199,23 +200,41 @@ def _normalize_hashtag(hashtag: str) -> str:
     return tag
 
 
+def _clean_bearer_token(value: str | None) -> str | None:
+    if not value:
+        return None
+    token = value.strip().strip('"').strip("'")
+    if token.lower().startswith("bearer "):
+        token = token.split(None, 1)[1].strip()
+    if token.lower() in TOKEN_PLACEHOLDERS:
+        return None
+    return token or None
+
+
 def _twitter_bearer_token() -> str | None:
     for env_name in TWITTER_BEARER_TOKEN_ENV:
-        value = os.getenv(env_name)
+        value = _clean_bearer_token(os.getenv(env_name))
         if value:
-            return value.strip()
+            return value
     if load_dotenv is not None:
         load_dotenv(DOTENV_PATH, override=True)
         for env_name in TWITTER_BEARER_TOKEN_ENV:
-            value = os.getenv(env_name)
+            value = _clean_bearer_token(os.getenv(env_name))
             if value:
-                return value.strip()
+                return value
     _load_env_file()
     for env_name in TWITTER_BEARER_TOKEN_ENV:
-        value = os.getenv(env_name)
+        value = _clean_bearer_token(os.getenv(env_name))
         if value:
-            return value.strip()
+            return value
     return None
+
+
+def _twitter_header_token(request: Request) -> str | None:
+    return (
+        _clean_bearer_token(request.headers.get("X-Twitter-Bearer-Token"))
+        or _clean_bearer_token(request.headers.get("Authorization"))
+    )
 
 
 def _twitter_error_detail(response: requests.Response) -> str:
@@ -340,6 +359,8 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
             "text": tweet["text"],
             "timestamp": tweet.get("created_at"),
             "hashtag": f"#{tag}",
+            "source": "x",
+            "source_detail": "Live X/Twitter recent search with public engagement metrics.",
             "author": {
                 "id": tweet.get("author_id"),
                 "name": author.get("name"),
@@ -357,7 +378,7 @@ def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = 
 def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
     """Return live hashtag results from X, or sample tweet_eval rows without a hashtag."""
     if hashtag:
-        header_token = request.headers.get("X-Twitter-Bearer-Token") or None
+        header_token = _twitter_header_token(request)
         return _live_twitter_hashtag_eval(hashtag, n, header_token)
 
     n = max(1, min(n, 20))

@@ -18,8 +18,8 @@ const SENT_STYLE = {
   mixed:    { bg: 'bg-amber-50',   panel: 'bg-amber-600',   border: 'border-amber-200',   text: 'text-amber-700',   dot: 'bg-amber-500',   badge: 'bg-amber-100 text-amber-700 border-amber-200',       label: 'Mixed' },
 }
 
-const BILSTM_FIX_CMD = 'cd phase_04_rnn_bilstm && python 02_train_rnn.py'
-const MODEL_NEEDS_TRAINING = { bilstm: `Not trained yet — run: ${BILSTM_FIX_CMD}` }
+const BILSTM_FIX_CMD = 'pip install -r requirements.txt && python -m phase_04_rnn_bilstm.02_train_rnn'
+const MODEL_NEEDS_TRAINING = { bilstm: 'Not loaded locally — install TensorFlow or retrain, then restart the backend' }
 
 const LS_TOKEN_KEY = 'x_bearer_token'
 
@@ -39,13 +39,16 @@ function extractApiError(error) {
 }
 
 function consensus(predictions = {}) {
+  const calibrated = predictions.calibrated?.label
   const votes = { positive: 0, negative: 0, neutral: 0, mixed: 0 }
   let total = 0
-  MODELS.forEach(key => {
+  MODELS.filter(key => key !== 'calibrated').forEach(key => {
     const label = predictions[key]?.label
     if (votes[label] !== undefined) { votes[label] += 1; total += 1 }
   })
-  const [label, count] = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]
+  const [rawLabel] = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]
+  const label = calibrated || rawLabel
+  const count = votes[label] || 0
   return { label, votes, count, total }
 }
 
@@ -96,19 +99,21 @@ function ModelPill({ modelKey, result }) {
   )
 }
 
-function MetricsRow({ metrics = {}, source }) {
+function MetricsRow({ metrics = {}, source, sourceDetail }) {
   const items = [['Likes', metrics.like_count], ['Replies', metrics.reply_count], ['Reposts', metrics.retweet_count], ['Quotes', metrics.quote_count]]
   const hasRealData = items.some(([, v]) => v != null && v > 0)
 
   if (!hasRealData) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
-        <span className="text-amber-500 text-base shrink-0 mt-0.5">ℹ️</span>
-        <div className="text-xs text-amber-700 font-medium space-y-1">
-          <p className="font-bold">No engagement data available</p>
+      <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${source === 'x' ? 'bg-slate-50 border-slate-200' : 'bg-amber-50 border-amber-200'}`}>
+        <span className={`${source === 'x' ? 'text-slate-500' : 'text-amber-500'} text-base shrink-0 mt-0.5`}>ℹ️</span>
+        <div className={`text-xs font-medium space-y-1 ${source === 'x' ? 'text-slate-600' : 'text-amber-700'}`}>
+          <p className="font-bold">{source === 'x' ? 'Engagement returned as zero' : 'No engagement data available'}</p>
           <p>
             {source === 'fallback' || source === 'dataset'
-              ? 'These are local fallback posts (no real X/Twitter engagement). Paste your Bearer Token above to fetch live tweets with real engagement metrics.'
+              ? sourceDetail || 'These are local fallback posts (no real X/Twitter engagement). Paste your Bearer Token above to fetch live tweets with real engagement metrics.'
+              : source === 'x'
+                ? 'This is a live X/Twitter post, but public metrics are currently all zero for this result.'
               : 'No public engagement data returned for this post.'}
           </p>
         </div>
@@ -196,7 +201,7 @@ function TweetCard({ tweet, index }) {
               </a>
             )}
           </div>
-          <MetricsRow metrics={tweet.metrics} source={tweet.source} />
+          <MetricsRow metrics={tweet.metrics} source={tweet.source} sourceDetail={tweet.source_detail} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             {MODELS.map(key => <ModelPill key={key} modelKey={key} result={tweet.predictions?.[key]} />)}
           </div>
@@ -344,12 +349,15 @@ function TwitterConnectPanel({ token, onSave }) {
 
           {/* BiLSTM offline notice */}
           <div className="rounded-xl bg-slate-900 text-slate-300 p-4 text-xs space-y-2">
-            <p className="font-black text-white text-sm">BiLSTM Offline? Run this to retrain:</p>
+            <p className="font-black text-white text-sm">BiLSTM Offline?</p>
+            <p className="text-slate-400">
+              A saved model exists, but the backend also needs TensorFlow installed in the active Python environment. Retrain only if the model file is missing or incompatible.
+            </p>
             <code className="block font-mono text-emerald-400 text-xs leading-relaxed">
-              cd sentiment_social_media_project_enhanced<br />
+              pip install -r requirements.txt<br />
               python -m phase_04_rnn_bilstm.02_train_rnn
             </code>
-            <p className="text-slate-400">Takes ~5 min on CPU. Saves <span className="font-mono text-amber-300">bilstm_best.h5</span> (Keras 2 compatible), then restart the backend.</p>
+            <p className="text-slate-400">Then restart the backend. Training saves <span className="font-mono text-amber-300">bilstm_best.h5</span>; the existing <span className="font-mono text-amber-300">.keras</span> model can load once TensorFlow/Keras is installed.</p>
           </div>
         </div>
       )}
@@ -369,8 +377,9 @@ export default function LiveEval() {
   const timerRef = useRef(null)
 
   const handleTokenSave = useCallback(token => {
-    setBearerToken(token)
-    if (token) localStorage.setItem(LS_TOKEN_KEY, token)
+    const cleaned = token.trim().replace(/^Bearer\s+/i, '')
+    setBearerToken(cleaned)
+    if (cleaned) localStorage.setItem(LS_TOKEN_KEY, cleaned)
     else localStorage.removeItem(LS_TOKEN_KEY)
   }, [])
 
@@ -513,7 +522,7 @@ export default function LiveEval() {
                 <p className="text-sm text-slate-500 mt-1">{tweets.length} posts · sorted newest first · consensus across all models</p>
               </div>
               <div className="flex items-center gap-2">
-                {isLive
+                {tweets.some(t => t.source === 'x')
                   ? <span className="text-sm px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">Live X</span>
                   : <span className="text-sm px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">Local fallback</span>
                 }

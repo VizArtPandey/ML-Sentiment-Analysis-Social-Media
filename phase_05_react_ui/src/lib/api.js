@@ -29,7 +29,11 @@ export async function getLiveEval(n = 10, hashtag = '', bearerToken = '') {
   const params = { n }
   if (hashtag) params.hashtag = hashtag
   const headers = {}
-  if (bearerToken) headers['X-Twitter-Bearer-Token'] = bearerToken
+  const token = bearerToken.trim().replace(/^Bearer\s+/i, '')
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+    headers['X-Twitter-Bearer-Token'] = token
+  }
   const { data } = await client.get('/live-eval', { params, headers })
   return data
 }

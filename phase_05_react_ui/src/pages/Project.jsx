@@ -76,12 +76,12 @@ const PHASES = [
 ]
 
 const STACK = [
-  { cat: 'Dataset',        items: ['tweet_eval/sentiment', 'HuggingFace Datasets', '45,615 tweets'],            col: 'indigo'  },
-  { cat: 'NLP / Features', items: ['TF-IDF (scikit-learn)', 'Keras Tokenizer', 'VADER SentimentAnalyzer'],      col: 'blue'    },
-  { cat: 'Classical ML',   items: ['Logistic Regression', 'Random Forest (300 trees)', 'LinearSVC + Calibration'], col: 'orange' },
-  { cat: 'Deep Learning',  items: ['TensorFlow / Keras', 'BiLSTM + Bahdanau Attention', 'EarlyStopping + ReduceLR'], col: 'emerald'},
-  { cat: 'Backend',        items: ['FastAPI', 'Pydantic v2', 'Uvicorn · CORS middleware'],                       col: 'violet'  },
-  { cat: 'Frontend',       items: ['React 18 + Vite 5', 'TailwindCSS 3.4', 'Recharts 2.12'],                    col: 'red'     },
+  { cat: 'Dataset',        desc: 'Benchmark source and labelled tweet corpus.', items: ['tweet_eval/sentiment', 'HuggingFace Datasets', '45,615 tweets'],            col: 'indigo'  },
+  { cat: 'NLP / Features', desc: 'Text cleaning plus vector features for classical and neural models.', items: ['TF-IDF (scikit-learn)', 'Keras Tokenizer', 'VADER SentimentAnalyzer'],      col: 'blue'    },
+  { cat: 'Classical ML',   desc: 'Fast interpretable baselines and calibrated probability models.', items: ['Logistic Regression', 'Random Forest (300 trees)', 'LinearSVC + Calibration'], col: 'orange' },
+  { cat: 'Deep Learning',  desc: 'Sequence model with token-level attention for context.', items: ['TensorFlow / Keras', 'BiLSTM + Bahdanau Attention', 'EarlyStopping + ReduceLR'], col: 'emerald'},
+  { cat: 'Backend',        desc: 'Production API layer for inference, metrics, history, and live eval.', items: ['FastAPI', 'Pydantic v2', 'Uvicorn · CORS middleware'],                       col: 'violet'  },
+  { cat: 'Frontend',       desc: 'Interactive dashboard and model-comparison experience.', items: ['React 18 + Vite 5', 'TailwindCSS 3.4', 'Recharts 2.12'],                    col: 'red'     },
 ]
 
 // ── Color tokens ─────────────────────────────────────────────────────────────
@@ -673,12 +673,18 @@ function StackTab() {
         {STACK.map(s => {
           const cl = C[s.col]
           return (
-            <div key={s.cat} className={`rounded-2xl border p-4 ${cl.bg} ${cl.border}`}>
-              <p className={`text-xs font-black uppercase tracking-wide mb-2 ${cl.text}`}>{s.cat}</p>
-              <ul className="space-y-1">
+            <div key={s.cat} className={`min-h-[210px] rounded-2xl border-2 p-5 ${cl.bg} ${cl.border} shadow-sm flex flex-col`}>
+              <div className="flex items-start justify-between gap-3 border-b border-white/70 pb-4">
+                <div>
+                  <p className={`text-lg font-black leading-tight ${cl.text}`}>{s.cat}</p>
+                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">{s.desc}</p>
+                </div>
+                <span className={`h-3 w-3 rounded-full ${cl.dot} shrink-0 mt-1`} />
+              </div>
+              <ul className="mt-4 space-y-2.5">
                 {s.items.map(it => (
-                  <li key={it} className="text-xs text-slate-600 flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${cl.dot}`} />
+                  <li key={it} className="text-sm font-semibold text-slate-700 flex items-start gap-2 leading-snug">
+                    <span className={`w-2 h-2 rounded-full ${cl.dot} shrink-0 mt-1.5`} />
                     {it}
                   </li>
                 ))}
@@ -689,22 +695,25 @@ function StackTab() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <p className="text-sm font-bold text-gray-900">Environment Setup</p>
-        <div className="bg-slate-900 rounded-xl p-5 font-mono text-xs text-slate-300 space-y-3">
+        <div>
+          <p className="text-lg font-black text-gray-900">Environment Setup</p>
+          <p className="text-sm text-slate-500 mt-1">Commands to run the same stack locally.</p>
+        </div>
+        <div className="bg-slate-900 rounded-xl p-5 font-mono text-sm text-slate-300 space-y-4">
           {[
             { comment: '# Install Python dependencies', cmd: 'pip install -r requirements.txt' },
             { comment: '# Start FastAPI backend',       cmd: 'python -m backend.main' },
             { comment: '# Start React frontend',        cmd: 'cd phase_05_react_ui && npm run dev' },
-            { comment: '# Retrain BiLSTM (saves .h5 for Keras 2)',  cmd: 'python -m phase_04_rnn_bilstm.02_train_rnn' },
-            { comment: '# Enable live Twitter evaluation', cmd: 'export X_BEARER_TOKEN=your_token_here' },
+            { comment: '# Enable BiLSTM locally if TensorFlow is missing',  cmd: 'pip install -r requirements.txt && python -m phase_04_rnn_bilstm.02_train_rnn' },
+            { comment: '# Enable live Twitter evaluation, then restart backend', cmd: 'X_BEARER_TOKEN=your_token_here' },
           ].map(({ comment, cmd }) => (
             <div key={cmd}>
-              <p className="text-slate-500">{comment}</p>
-              <p className="text-emerald-400">{cmd}</p>
+              <p className="text-slate-500 text-xs">{comment}</p>
+              <p className="text-emerald-400 leading-relaxed">{cmd}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-400">Get Twitter Bearer Token → developer.twitter.com → Create App → Keys and Tokens → Bearer Token</p>
+        <p className="text-sm text-slate-500">Get Twitter Bearer Token → developer.twitter.com → Create App → Keys and Tokens → Bearer Token</p>
       </div>
     </div>
   )
