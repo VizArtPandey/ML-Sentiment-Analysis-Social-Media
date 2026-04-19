@@ -15,11 +15,22 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install huggingface-hub
+        run: pip install huggingface-hub[cli] hf-transfer
+
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_HUB_ENABLE_HF_TRANSFER: '1'
         run: |
           git config --global user.email "vizartpandey@users.noreply.github.com"
           git config --global user.name "VizArtPandey"
+          git lfs install
           git remote add hf https://rajvivan:${HF_TOKEN}@huggingface.co/spaces/rajvivan/ML-Sentiment-Analysis-Social-Media
-          git push hf main --force
+          git lfs fetch --all
+          GIT_LFS_SKIP_SMUDGE=1 git push hf main --force
