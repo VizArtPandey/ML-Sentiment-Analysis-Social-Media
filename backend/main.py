@@ -649,8 +649,9 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent / "phase_05_react_ui" / "
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
+    @app.get("/", include_in_schema=False)
     @app.get("/{full_path:path}", include_in_schema=False)
-    def serve_spa(full_path: str):
+    def serve_spa(full_path: str = ""):
         index = FRONTEND_DIST / "index.html"
         return FileResponse(str(index)) if index.exists() else JSONResponse({"detail": "UI not built"})
 
