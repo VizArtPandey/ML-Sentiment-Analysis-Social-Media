@@ -87,7 +87,7 @@ def main():
     # Keras 3 ModelCheckpoint requires the native .keras extension. Export a
     # local .h5 copy as a secondary artifact for older tooling.
     h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
-    checkpoint_path = str(BILSTM_MODEL_PATH.with_suffix(".keras"))
+    checkpoint_path = str(BILSTM_MODEL_PATH.with_suffix(".h5"))
 
     callbacks = [
         tf.keras.callbacks.EarlyStopping(monitor="val_loss",

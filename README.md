@@ -1,3 +1,12 @@
+---
+title: ML Sentiment Analysis Social Media
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Sentiment Analysis on Social Media — End-to-End ML Project
 
 > **Multi-model pipeline:** VADER · TF-IDF + Logistic Regression · Random Forest · SVM · Bidirectional LSTM with Attention · Calibrated ambiguity layer  
@@ -6,8 +15,9 @@
 ---
 
 ## 🚀 Recent Updates
+
 - **BiLSTM Attention Visualization:** Fixed the deep learning inference to correctly extract intermediate graph output layers from the functional Keras `Model`, passing token-wise influence mathematically to the React heatmaps. True math-backed metrics!
-- **Fallback Simulation for Live Evals:** Simulated Twitter API generation allows the `/live-eval` dashboard to gracefully fall back on highly realistic, dynamically generated tweets (powered by random choice dictionaries) without getting IP banned. 
+- **Fallback Simulation for Live Evals:** Simulated Twitter API generation allows the `/live-eval` dashboard to gracefully fall back on highly realistic, dynamically generated tweets (powered by random choice dictionaries) without getting IP banned.
 - **Classical Model Retraining:** Retrained Random Forest, Logistic Regression, and calibrated SVM endpoints.
 
 ---
@@ -37,6 +47,7 @@ sentiment_social_media_project_enhanced/
 ## Quick Start
 
 ### 1. Install dependencies
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -44,6 +55,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run Phase 01 – 04 pipeline sequentially
+
 ```bash
 # Phase 01: EDA
 python phase_01_data_exploration/01_load_dataset.py
@@ -73,11 +85,13 @@ python phase_04_rnn_bilstm/05_compare_all_models.py
 ```
 
 ### 3. Start the FastAPI backend
+
 ```bash
 uvicorn backend.main:app --reload --port 8000
 ```
 
 ### 4. Start the React UI (Phase 05)
+
 ```bash
 cd phase_05_react_ui
 npm install
@@ -85,6 +99,7 @@ npm run dev
 ```
 
 ### 5. Launch Gradio demo (Phase 06)
+
 ```bash
 python phase_06_huggingface_deploy/app.py
 ```
@@ -93,14 +108,14 @@ python phase_06_huggingface_deploy/app.py
 
 ## Phase Descriptions
 
-| Phase | Description | Key Outputs |
-|-------|-------------|-------------|
-| 01 | Exploratory Data Analysis | bdstar HF download, class dist, length plots, WordClouds, quality report |
-| 02 | Feature Engineering | TF-IDF pkl, Tokenizer pkl, Word2Vec model, t-SNE plot |
-| 03 | Classical Models | VADER, LR (GridSearch), RF, SVM — F1 comparison bar chart |
-| 04 | BiLSTM RNN | Embedding→BiLSTM→Attention→Dense, ROC curves, attention heatmap |
-| 05 | React UI | Analyze page, calibrated output, Live Eval, reset control, confidence bars |
-| 06 | HF Deploy | Gradio wrapping calibrated + available model pipelines, Dockerfile |
+| Phase | Description               | Key Outputs                                                                |
+| ----- | ------------------------- | -------------------------------------------------------------------------- |
+| 01    | Exploratory Data Analysis | bdstar HF download, class dist, length plots, WordClouds, quality report   |
+| 02    | Feature Engineering       | TF-IDF pkl, Tokenizer pkl, Word2Vec model, t-SNE plot                      |
+| 03    | Classical Models          | VADER, LR (GridSearch), RF, SVM — F1 comparison bar chart                  |
+| 04    | BiLSTM RNN                | Embedding→BiLSTM→Attention→Dense, ROC curves, attention heatmap            |
+| 05    | React UI                  | Analyze page, calibrated output, Live Eval, reset control, confidence bars |
+| 06    | HF Deploy                 | Gradio wrapping calibrated + available model pipelines, Dockerfile         |
 
 ---
 
@@ -117,27 +132,27 @@ python phase_06_huggingface_deploy/app.py
 
 ## Model Performance (expected)
 
-| Model | Macro-F1 | Notes |
-|-------|----------|-------|
-| VADER | ~0.55 | Rule-based, no training |
-| Logistic Regression | ~0.72 | TF-IDF + GridSearch |
-| Random Forest | ~0.68 | 300 estimators |
-| SVM | ~0.71 | RBF kernel |
-| **BiLSTM** | **~0.76** | Bidirectional + Attention |
+| Model                 | Macro-F1           | Notes                                                     |
+| --------------------- | ------------------ | --------------------------------------------------------- |
+| VADER                 | ~0.55              | Rule-based, no training                                   |
+| Logistic Regression   | ~0.72              | TF-IDF + GridSearch                                       |
+| Random Forest         | ~0.68              | 300 estimators                                            |
+| SVM                   | ~0.71              | RBF kernel                                                |
+| **BiLSTM**            | **~0.76**          | Bidirectional + Attention                                 |
 | **Calibrated Output** | stress-set trained | Ambiguity-aware layer trained on advanced challenge cases |
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Liveness check |
-| POST | `/api/predict` | Single text to selected/all models |
-| POST | `/api/predict/batch` | Batch texts |
-| GET | `/api/metrics` | Latest training metrics |
-| GET | `/api/history` | Prediction history |
-| GET | `/api/live-eval?hashtag=<tag>&n=10` | X/Twitter hashtag evaluation, with local fallback if no bearer token is configured |
+| Method | Endpoint                            | Description                                                                        |
+| ------ | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| GET    | `/health`                           | Liveness check                                                                     |
+| POST   | `/api/predict`                      | Single text to selected/all models                                                 |
+| POST   | `/api/predict/batch`                | Batch texts                                                                        |
+| GET    | `/api/metrics`                      | Latest training metrics                                                            |
+| GET    | `/api/history`                      | Prediction history                                                                 |
+| GET    | `/api/live-eval?hashtag=<tag>&n=10` | X/Twitter hashtag evaluation, with local fallback if no bearer token is configured |
 
 ## Dataset
 

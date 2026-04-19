@@ -1,31 +1,31 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, constr
-from typing import Optional
+from typing import Optional, List, Dict
 
 
 class PredictRequest(BaseModel):
     text: constr(strip_whitespace=True, min_length=1, max_length=2000)
-    models: list[str] = ["all"]
+    models: List[str] = ["all"]
 
 
 class BatchPredictRequest(BaseModel):
-    texts: list[constr(strip_whitespace=True, min_length=1, max_length=2000)] = Field(
+    texts: List[constr(strip_whitespace=True, min_length=1, max_length=2000)] = Field(
         ...,
         min_length=1,
         max_length=200,
     )
-    models: list[str] = ["all"]
+    models: List[str] = ["all"]
 
 
 class SentimentResult(BaseModel):
     label: str
     confidence: float
-    scores: dict[str, float]
+    scores: Dict[str, float]
 
 
 class AttentionData(BaseModel):
-    tokens: list[str]
-    weights: list[float]
+    tokens: List[str]
+    weights: List[float]
 
 
 class PredictResponse(BaseModel):
@@ -40,7 +40,7 @@ class PredictResponse(BaseModel):
 
 
 class MetricsResponse(BaseModel):
-    benchmark: list[dict]
+    benchmark: List[dict]
     updated_at: Optional[str] = None
 
 
@@ -58,4 +58,4 @@ class HistoryItem(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     version: str
-    models_loaded: dict[str, bool]
+    models_loaded: Dict[str, bool]

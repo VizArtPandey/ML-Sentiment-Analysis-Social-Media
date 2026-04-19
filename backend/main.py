@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, List, Dict, Any
 import typing
 """FastAPI backend — /predict /metrics /history /health."""
 from pathlib import Path
@@ -201,7 +202,7 @@ def _normalize_hashtag(hashtag: str) -> str:
     return tag
 
 
-def _clean_bearer_token(value: str | None) -> str | None:
+def _clean_bearer_token(value: Optional[str]) -> Optional[str]:
     if not value:
         return None
     token = value.strip().strip('"').strip("'")
@@ -212,7 +213,7 @@ def _clean_bearer_token(value: str | None) -> str | None:
     return token or None
 
 
-def _twitter_bearer_token() -> str | None:
+def _twitter_bearer_token() -> Optional[str]:
     for env_name in TWITTER_BEARER_TOKEN_ENV:
         value = _clean_bearer_token(os.getenv(env_name))
         if value:
@@ -231,7 +232,7 @@ def _twitter_bearer_token() -> str | None:
     return None
 
 
-def _twitter_header_token(request: Request) -> str | None:
+def _twitter_header_token(request: Request) -> Optional[str]:
     return (
         _clean_bearer_token(request.headers.get("X-Twitter-Bearer-Token"))
         or _clean_bearer_token(request.headers.get("Authorization"))
@@ -368,7 +369,7 @@ _FALLBACK_AUTHORS = [
 ]
 
 
-def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> list[dict]:
+def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> List[dict]:
     import random
     tag = _normalize_hashtag(hashtag)
     limit = max(1, min(n, 10))
@@ -443,10 +444,10 @@ def _fallback_hashtag_eval(hashtag: str, n: int, reason: str) -> list[dict]:
     return results
 
 
-async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | None = None) -> list[dict]:
+async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: Optional[str] = None) -> List[dict]:
     tag = _normalize_hashtag(hashtag)
     limit = max(1, min(n, 10))
-    twikit_failure: str | None = None
+    twikit_failure: Optional[str] = None
 
     username = os.getenv("X_USERNAME")
     email = os.getenv("X_EMAIL")
@@ -460,9 +461,9 @@ async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | N
     if has_browser_cookies or has_password_creds:
         try:
             from twikit import Client as TwikitClient
-        except ImportError:
+        except (ImportError, TypeError, SyntaxError) as e:
             TwikitClient = None
-            logger.warning("twikit not installed — skipping scraper tier. `pip install twikit` to enable.")
+            logger.warning(f"twikit not installed or unsupported on this Python version ({e}) — skipping scraper tier.")
 
         if TwikitClient is not None:
             try:
@@ -610,7 +611,7 @@ async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: str | N
 
 
 @app.get("/api/live-eval", tags=["inference"])
-async def live_eval(request: Request, n: int = 10, hashtag: str | None = None):
+async def live_eval(request: Request, n: int = 10, hashtag: Optional[str] = None):
     """Return live hashtag results from X, or sample tweet_eval rows without a hashtag."""
     if hashtag:
         header_token = _twitter_header_token(request)
