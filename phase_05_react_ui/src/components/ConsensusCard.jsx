@@ -27,14 +27,6 @@ const CFG = {
     badge:  'bg-slate-100 text-slate-700 border-slate-200',
     dot:    'bg-slate-400',
   },
-  mixed: {
-    bg: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-    border: 'border-amber-200',
-    label:  'text-amber-700',
-    bar:    'bg-amber-500',
-    badge:  'bg-amber-100 text-amber-800 border-amber-200',
-    dot:    'bg-amber-500',
-  },
 }
 
 export default function ConsensusCard({ results }) {

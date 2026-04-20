@@ -4,26 +4,35 @@ const EXAMPLES = [
   {
     text: "I absolutely love this product! Best purchase ever! 🎉",
     label: "positive",
+    lang: "EN",
+  },
+  {
+    text: "هذا المنتج رائع جداً، أنصح الجميع بتجربته!",
+    label: "positive",
+    lang: "AR",
+    hint: "Arabic",
+  },
+  {
+    text: "यह सबसे खराब अनुभव था, मैं बहुत निराश हूँ।",
+    label: "negative",
+    lang: "HI",
+    hint: "Hindi",
   },
   {
     text: "The service was terrible. I waited 2 hours and got no help at all.",
     label: "negative",
+    lang: "EN",
+  },
+  {
+    text: "¡Me encanta! Excelente calidad y muy buen servicio.",
+    label: "positive",
+    lang: "ES",
+    hint: "Spanish",
   },
   {
     text: "It arrived on time. The packaging was standard. Nothing special.",
     label: "neutral",
-  },
-  {
-    text: "This completely changed how I work — beyond impressed with the results!",
-    label: "positive",
-  },
-  {
-    text: "Worst experience of my life. Never coming back. Absolute disaster!",
-    label: "negative",
-  },
-  {
-    text: "Just updated the app. Seems to be working fine so far.",
-    label: "neutral",
+    lang: "EN",
   },
 ];
 
@@ -153,8 +162,12 @@ export default function HeroInput({ onSubmit, onReset, loading, hasOutput }) {
 
       {/* Example tweets */}
       <div className="max-w-3xl mx-auto">
-        <p className="text-xs font-semibold text-slate-400 text-center mb-3 uppercase tracking-widest">
+        <p className="text-xs font-semibold text-slate-400 text-center mb-1 uppercase tracking-widest">
           Try an example
+        </p>
+        <p className="text-[11px] text-slate-400 text-center mb-3">
+          🌍 Multilingual — Arabic, Hindi, Spanish and more are auto-translated
+          before analysis
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {EXAMPLES.map((ex, i) => (
@@ -168,10 +181,13 @@ export default function HeroInput({ onSubmit, onReset, loading, hasOutput }) {
                          hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50
                          transition-all duration-150 group"
             >
-              <p className="text-xs text-gray-600 line-clamp-2 group-hover:text-gray-900 leading-relaxed">
+              <p
+                className="text-xs text-gray-600 line-clamp-2 group-hover:text-gray-900 leading-relaxed"
+                dir={["AR", "HE", "UR"].includes(ex.lang) ? "rtl" : "ltr"}
+              >
                 {ex.text}
               </p>
-              <div className="flex items-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${LABEL_DOT[ex.label]}`}
                 />
@@ -180,6 +196,11 @@ export default function HeroInput({ onSubmit, onReset, loading, hasOutput }) {
                 >
                   {ex.label}
                 </span>
+                {ex.lang && ex.lang !== "EN" && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold">
+                    {ex.hint || ex.lang}
+                  </span>
+                )}
               </div>
             </button>
           ))}

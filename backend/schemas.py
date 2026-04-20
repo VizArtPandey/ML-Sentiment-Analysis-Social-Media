@@ -37,6 +37,10 @@ class PredictResponse(BaseModel):
     bilstm:    Optional[SentimentResult] = None
     attention: Optional[AttentionData]  = None
     request_id: str
+    source_language: Optional[str] = None
+    source_language_name: Optional[str] = None
+    translated_text: Optional[str] = None
+    was_translated: bool = False
 
 
 class MetricsResponse(BaseModel):

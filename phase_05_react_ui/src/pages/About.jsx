@@ -165,8 +165,9 @@ export default function About() {
         </h1>
         <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
           An end-to-end multi-model sentiment analysis system — covering the full journey
-          from raw tweets to a production React dashboard. Here's how it was designed,
-          what decisions were made, and why.
+          from multilingual raw posts to a production React dashboard, model comparison,
+          and accuracy-scaling evaluation. Here's how it was designed, what decisions
+          were made, and why.
         </p>
       </div>
 
@@ -175,18 +176,20 @@ export default function About() {
          ══════════════════════════════════════════════════════ */}
       <Section title="System Overview" subtitle="How raw text becomes a sentiment prediction — from input to output">
         <div className="card p-6 overflow-x-auto">
-          <div className="flex items-start gap-2 min-w-[700px]">
+          <div className="flex items-start gap-2 min-w-[860px]">
             <PipelineNode step="01" icon="📥" color="slate"   title="Raw Input"        desc="Tweet / post up to 280 chars"           outputs={['.csv / API']} />
             <Arrow />
-            <PipelineNode step="02" icon="🧹" color="blue"    title="Text Cleaning"    desc="Normalize, strip URLs & emojis"          outputs={['clean_text']} />
+            <PipelineNode step="02" icon="🌍" color="emerald" title="Language Guard"   desc="Detect script and translate to English" outputs={['source_lang','translated_text']} />
             <Arrow />
-            <PipelineNode step="03" icon="⚙️" color="violet"  title="Feature Extract"  desc="TF-IDF vectorizer or token sequences"    outputs={['X_tfidf','X_seq']} />
+            <PipelineNode step="03" icon="🧹" color="blue"    title="Text Cleaning"    desc="Normalize, strip URLs & emojis"          outputs={['clean_text']} />
             <Arrow />
-            <PipelineNode step="04" icon="🤖" color="orange"  title="5 Models"         desc="VADER · LR · RF · SVM · BiLSTM"          outputs={['proba[3]']} />
+            <PipelineNode step="04" icon="⚙️" color="violet"  title="Feature Extract"  desc="TF-IDF vectorizer or token sequences"    outputs={['X_tfidf','X_seq']} />
             <Arrow />
-            <PipelineNode step="05" icon="🗳️" color="indigo"  title="Ensemble Vote"    desc="Consensus across models + attention"     outputs={['verdict']} />
+            <PipelineNode step="05" icon="🤖" color="orange"  title="5 Models"         desc="VADER · LR · RF · SVM · BiLSTM"          outputs={['proba[3]']} />
             <Arrow />
-            <PipelineNode step="06" icon="📊" color="emerald" title="React Dashboard"  desc="Real-time results + charts"              outputs={['.json / UI']} />
+            <PipelineNode step="06" icon="🗳️" color="indigo"  title="Ensemble Vote"    desc="Consensus across models + attention"     outputs={['verdict']} />
+            <Arrow />
+            <PipelineNode step="07" icon="📊" color="emerald" title="React Dashboard"  desc="Real-time results + charts"              outputs={['.json / UI']} />
           </div>
         </div>
 
@@ -207,6 +210,7 @@ export default function About() {
               <tbody>
                 {[
                   ['Ingestion',    'Raw tweet text',          'Load CSV / HuggingFace API',         '45,615 labelled rows',         'DataFrame'],
+                  ['Language',     'Any supported script',    'Script heuristic + GoogleTranslator', 'English text + language metadata', 'str / JSON'],
                   ['Cleaning',     'Raw string',              'Regex, contraction expand, lowercase', 'Normalized string',           'str'],
                   ['TF-IDF',       'Cleaned text',            'Fit vectorizer (20K features)',        'Sparse feature matrix',       'scipy CSR'],
                   ['Tokenization', 'Cleaned text',            'Keras tokenizer + pad to 60 tokens',  'Int sequences',               'ndarray (N×60)'],
@@ -400,6 +404,20 @@ export default function About() {
             why="Streamlit was evaluated but produces static Python-rendered UIs with no client-side interactivity. The consensus voting, animated bars, expandable history, and attention heatmap require client-side state. React gives full control over UX. Recharts is composable and integrates cleanly with the existing component tree. Grafana requires a time-series DB and is overkill for per-request metrics."
             tradeoff="React requires a build step, npm dependencies, and more development time than Streamlit. For a demo/course project Streamlit would be faster to ship, but the resulting UI would be significantly less polished."
           />
+          <DecisionCard
+            icon="🌍" color="emerald"
+            question="How should non-English social media posts be handled?"
+            decision="Detect likely source language, translate to English, then run the same five-model pipeline"
+            why="The trained models are based on English tweet_eval sentiment labels. A lightweight Unicode-script detector identifies Arabic, Hindi, Bengali, Tamil, Urdu, Chinese, Japanese, Korean, Russian, Greek, Hebrew, Thai, and common Latin-language hints. Non-English text is translated through deep-translator before inference, while the API still returns the original text plus source-language metadata."
+            tradeoff="Machine translation can smooth out slang, sarcasm, and code-switching. It is still more useful than forcing English-only input, and the UI exposes the translated text so the prediction path remains transparent."
+          />
+          <DecisionCard
+            icon="📈" color="orange"
+            question="How do we prove accuracy changes as dataset size grows?"
+            decision="Multi-seed accuracy-scaling curves with per-class recall, macro-F1, train/test accuracy, and threshold summaries"
+            why="A single train/test point is not enough for a defensible result. The scaling script now evaluates fractions from 5% to 100% with repeated random seeds, plots mean ± standard deviation confidence bands, includes positive/negative/neutral recall and macro-F1, and exposes the train-vs-test gap to show overfitting."
+            tradeoff="Running every model across many fractions is slower, especially when BiLSTM is included. The script supports appending BiLSTM later so classical curves can be regenerated quickly without losing the deep-learning comparison path."
+          />
         </div>
       </Section>
 
@@ -489,12 +507,18 @@ export default function About() {
             },
             {
               num:'05', icon:'💻', color:'emerald', title:'React Dashboard UI',
-              desc:'Production React 18 SPA with real-time multi-model inference via FastAPI backend. Features: consensus voting card, per-model result cards with animated confidence bars, grouped bar chart comparing probability distributions, BiLSTM attention heatmap with token tooltips, session history with expandable detail.',
-              outcome:'Fully interactive dashboard running at localhost:5173, falling back to mock predictions when API is offline.',
+              desc:'Production React 18 SPA with real-time multi-model inference via FastAPI backend. Features: multilingual input display, consensus voting card, per-model result cards with animated confidence bars, BiLSTM attention heatmap with token tooltips, session history, batch CSV analysis, and live tweet evaluation.',
+              outcome:'Fully interactive dashboard running at localhost:5173, with transparent translated-text display when non-English input is analyzed.',
               tags:['React 18','TailwindCSS 3','Recharts 2','Vite 5','FastAPI','react-router-dom'],
             },
             {
-              num:'06', icon:'🚀', color:'red', title:'HuggingFace Deployment',
+              num:'06', icon:'📈', color:'orange', title:'Accuracy & Scaling Study',
+              desc:'Added a dedicated scaling experiment that evaluates increasing train/test fractions from 5% to 100% across repeated random seeds. The output includes positive, negative, and neutral class recall, macro-F1, train accuracy, test accuracy, confidence bands, train-test gap, and samples-to-threshold summary cards.',
+              outcome:'Generated accuracy_scaling_data.csv, accuracy_scaling_chart.html, and accuracy_scaling_thresholds.csv for the React Accuracy & Scaling tab.',
+              tags:['Learning curves','Multi-seed','Macro-F1','Per-class recall','Train-test gap','Plotly'],
+            },
+            {
+              num:'07', icon:'🚀', color:'red', title:'HuggingFace Deployment',
               desc:'Gradio 4 interface wrapping all inference pipelines with Dockerfile for HuggingFace Spaces. API containerized with uvicorn, model artifacts bundled. Supports batch inference (up to 200 texts), exposes /predict, /metrics, /history, /health endpoints.',
               outcome:'Docker image ready for push to HuggingFace Spaces. Gradio UI provides zero-JS fallback demo.',
               tags:['Gradio 4','Docker','uvicorn','HuggingFace Spaces','FastAPI','pydantic v2'],
@@ -544,11 +568,51 @@ export default function About() {
           </div>
         </div>
 
+        {/* Accuracy scaling study */}
+        <div className="card overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h3 className="text-sm font-bold text-gray-900">Accuracy Scaling — multi-seed learning curves</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Dataset fractions: 5%, 10%, 20%, 40%, 60%, 80%, 100% · 3 random seeds · positive/negative/neutral recall + macro-F1.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+            {[
+              {
+                label:'Most data-efficient classical model',
+                value:'Logistic Regression',
+                detail:'Best observed classical test accuracy: 59.6% at full training scale.',
+                color:'text-blue-700',
+              },
+              {
+                label:'Rule baseline behavior',
+                value:'VADER is flat',
+                detail:'More training data does not affect VADER, so its curve stays near 53% test accuracy.',
+                color:'text-red-700',
+              },
+              {
+                label:'Threshold summary',
+                value:'70% not reached',
+                detail:'The current classical run does not reach 70% test accuracy; BiLSTM can be appended to the same artifact.',
+                color:'text-orange-700',
+              },
+            ].map((item) => (
+              <div key={item.label} className="p-5">
+                <p className="text-xs font-black uppercase tracking-wide text-slate-400">{item.label}</p>
+                <p className={`text-xl font-extrabold mt-1 ${item.color}`}>{item.value}</p>
+                <p className="text-sm text-slate-600 leading-relaxed mt-2">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Key learnings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { icon:'💡', title:'Neutral class is hardest', desc:'All models underperform on neutral — tweets without strong sentiment markers look like noise. Neutral recall is consistently lowest. This is an inherent labelling ambiguity in the dataset.', color:'amber' },
             { icon:'📐', title:'Bigrams matter more than model complexity', desc:'TF-IDF with bigrams closed most of the gap vs BiLSTM for the LR model (0.721 vs 0.762). The incremental gain from deep learning is real but modest on 60-token inputs.', color:'blue' },
+            { icon:'🌍', title:'Multilingual support needs transparency', desc:'Translation lets non-English posts use the same English-trained model suite, but translated text must be shown to the user because slang, sarcasm, and code-switching can shift meaning.', color:'emerald' },
+            { icon:'📈', title:'Learning curves beat one-off scores', desc:'The scaling tab shows how each model behaves as training/testing size grows, including confidence bands and train-test gaps. This is stronger evidence than a single final accuracy number.', color:'blue' },
             { icon:'🔍', title:'Attention ≠ explanation', desc:'Attention weights highlight important tokens but do not causally explain predictions. High-weight tokens are correlated with the predicted class, not necessarily the cause.', color:'violet' },
             { icon:'🚀', title:'Next step: BERT fine-tuning', desc:'RoBERTa-base fine-tuned on tweet_eval achieves ~0.82 macro F1. The BiLSTM gap is bridgeable. With access to GPU and HuggingFace, fine-tuning would be the natural next iteration.', color:'emerald' },
           ].map(({ icon, title, desc, color }) => {
@@ -578,13 +642,13 @@ export default function About() {
             { cat:'ML / Deep Learning', icon:'🤖', color:'bg-indigo-600',
               items:['Keras / TensorFlow 2.16','scikit-learn 1.5','vaderSentiment','Gensim Word2Vec','BiLSTM + Bahdanau Attention'] },
             { cat:'Data & NLP',         icon:'📊', color:'bg-blue-600',
-              items:['HuggingFace Datasets','tweet_eval/sentiment','pandas','numpy','NLTK / regex'] },
+              items:['HuggingFace Datasets','tweet_eval/sentiment','deep-translator','pandas','numpy','NLTK / regex'] },
             { cat:'Backend API',        icon:'⚡', color:'bg-violet-600',
-              items:['FastAPI 0.111','uvicorn ASGI','pydantic v2','Python 3.11','CORS + routing'] },
+              items:['FastAPI 0.111','uvicorn ASGI','pydantic v2','Language metadata','Python 3.11','CORS + routing'] },
             { cat:'Frontend',           icon:'🎨', color:'bg-emerald-600',
               items:['React 18','TailwindCSS 3.4','Recharts 2.12','Vite 5','react-router-dom 6'] },
             { cat:'Visualization',      icon:'📈', color:'bg-orange-500',
-              items:['Recharts (BarChart, Radar, Line)','matplotlib / seaborn','WordCloud','Attention heatmap'] },
+              items:['Recharts (BarChart, Radar, Line)','Plotly scaling chart','matplotlib / seaborn','WordCloud','Attention heatmap'] },
             { cat:'DevOps / Deploy',    icon:'🐳', color:'bg-slate-700',
               items:['Gradio 4','Docker','HuggingFace Spaces','GitHub','SEED=42 reproducibility'] },
           ].map(({ cat, icon, color, items }) => (
@@ -616,7 +680,7 @@ export default function About() {
             NumPy, TensorFlow, scikit-learn, and dataset splits. Model artifacts saved as{' '}
             <code className="text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-mono">.keras</code>{' '}
             and <code className="text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-mono">.joblib</code>.
-            Results are fully deterministic across runs and machines.
+            The scaling study repeats fractions across multiple seeds and stores the mean, standard deviation, and 95% confidence interval columns for auditability.
           </p>
         </div>
       </div>

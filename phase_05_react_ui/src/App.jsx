@@ -16,12 +16,25 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    healthCheck()
-      .then(() => setApiStatus("online"))
-      .catch(() => setApiStatus("offline"));
+    const checkApi = () => {
+      healthCheck()
+        .then(() => setApiStatus("online"))
+        .catch(() => setApiStatus("offline"));
+    };
+
+    checkApi();
+    const interval = setInterval(checkApi, 10000);
+
     const onScroll = () => setScrolled(window.scrollY > 8);
+    const onFocus = () => checkApi();
+
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   return (

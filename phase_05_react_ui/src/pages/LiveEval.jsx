@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getLiveEval } from "../lib/api";
 
 const MODELS = ["vader", "lr", "rf", "svm", "bilstm"];
+const SENTIMENT_LABELS = ["positive", "negative", "neutral"];
 const MODEL_LABEL = {
   vader: "VADER",
   lr: "LR",
@@ -69,15 +70,6 @@ const SENT_STYLE = {
     badge: "bg-slate-100 text-slate-700 border-slate-200",
     label: "Neutral",
   },
-  mixed: {
-    bg: "bg-amber-50",
-    panel: "bg-amber-600",
-    border: "border-amber-200",
-    text: "text-amber-700",
-    dot: "bg-amber-500",
-    badge: "bg-amber-100 text-amber-700 border-amber-200",
-    label: "Mixed",
-  },
 };
 
 const BILSTM_FIX_CMD =
@@ -88,6 +80,13 @@ const MODEL_NEEDS_TRAINING = {
 };
 
 const LS_TOKEN_KEY = "x_bearer_token";
+const TIME_FILTERS = [
+  { value: "all", label: "All timestamps" },
+  { value: "1h", label: "Last 1 hour" },
+  { value: "6h", label: "Last 6 hours" },
+  { value: "24h", label: "Last 24 hours" },
+  { value: "today", label: "Today" },
+];
 
 function normalizeHashtag(value) {
   return value.trim().replace(/^#+/, "");
@@ -110,8 +109,34 @@ function extractApiError(error) {
   return error?.message || "Could not fetch live tweets.";
 }
 
+function filterTweetsByTimestamp(tweets, filter) {
+  const sorted = [...tweets].sort((a, b) => {
+    const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return bTime - aTime;
+  });
+  if (filter === "all") return sorted;
+
+  const now = Date.now();
+  const today = new Date();
+  return sorted.filter((tweet) => {
+    if (!tweet.timestamp) return false;
+    const time = new Date(tweet.timestamp);
+    if (Number.isNaN(time.getTime())) return false;
+    if (filter === "today") {
+      return (
+        time.getFullYear() === today.getFullYear() &&
+        time.getMonth() === today.getMonth() &&
+        time.getDate() === today.getDate()
+      );
+    }
+    const hours = filter === "1h" ? 1 : filter === "6h" ? 6 : 24;
+    return now - time.getTime() <= hours * 60 * 60 * 1000;
+  });
+}
+
 function consensus(predictions = {}) {
-  const votes = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
+  const votes = { positive: 0, negative: 0, neutral: 0 };
   let total = 0;
   MODELS.forEach((key) => {
     const label = predictions[key]?.label;
@@ -120,10 +145,8 @@ function consensus(predictions = {}) {
       total += 1;
     }
   });
-  const [rawLabel] = Object.entries(votes).sort((a, b) => b[1] - a[1])[0] || [
-    "neutral",
-    0,
-  ];
+  if (!total) return { label: "neutral", votes, count: 0, total };
+  const [rawLabel] = Object.entries(votes).sort((a, b) => b[1] - a[1])[0] || ["neutral", 0];
   const label = rawLabel;
   const count = votes[label] || 0;
   return { label, votes, count, total };
@@ -291,11 +314,6 @@ function TweetCard({ tweet, index }) {
                 {tweet.hashtag}
               </span>
             )}
-            {tweet.source === "fallback" && (
-              <span className="text-sm px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-black">
-                Local fallback
-              </span>
-            )}
             <span
               className={`text-sm px-3 py-1 rounded-full border font-black ${sentiment.badge}`}
             >
@@ -394,14 +412,14 @@ function TweetCard({ tweet, index }) {
 
 function DistBar({ tweets }) {
   if (!tweets.length) return null;
-  const counts = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
+  const counts = { positive: 0, negative: 0, neutral: 0 };
   tweets.forEach((tweet) => {
     counts[consensus(tweet.predictions).label] += 1;
   });
   const total = tweets.length;
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {["positive", "negative", "neutral", "mixed"].map((key) => {
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {SENTIMENT_LABELS.map((key) => {
         const style = SENT_STYLE[key];
         const pct = total ? Math.round((counts[key] / total) * 100) : 0;
         return (
@@ -474,7 +492,7 @@ function TwitterConnectPanel({ token, onSave }) {
             >
               {saved
                 ? "Bearer token active — fetching real X posts"
-                : "Without a token, local fallback posts are used"}
+                : "Without a token, sample posts are shown"}
             </p>
           </div>
         </div>
@@ -601,6 +619,7 @@ export default function LiveEval() {
   const [loading, setLoading] = useState(false);
   const [lastFetch, setLastFetch] = useState(null);
   const [error, setError] = useState(null);
+  const [timestampFilter, setTimestampFilter] = useState("all");
   const [bearerToken, setBearerToken] = useState(
     () => localStorage.getItem(LS_TOKEN_KEY) || "",
   );
@@ -670,6 +689,7 @@ export default function LiveEval() {
   );
 
   const isLive = bearerToken.length > 0;
+  const filteredTweets = filterTweetsByTimestamp(tweets, timestampFilter);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-6">
@@ -681,7 +701,7 @@ export default function LiveEval() {
           />
           {isLive
             ? "Live X/Twitter Feed"
-            : "Tweet Analyser — Local Fallback Mode"}
+            : "Tweet Analyser"}
         </div>
         <h1 className="text-4xl font-extrabold text-gray-900">
           Tweet <span className="text-gradient">Analyser</span>
@@ -739,7 +759,7 @@ export default function LiveEval() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {isLive
                 ? `Live search for "${activeTag}"`
-                : `Fallback posts for "${activeTag}"`}
+                : `Sample posts for "${activeTag}"`}
             </span>
           )}
           {lastFetch && (
@@ -804,27 +824,42 @@ export default function LiveEval() {
                   Batch Summary
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  {tweets.length} posts · sorted newest first · consensus across
-                  all models
+                  {filteredTweets.length} of {tweets.length} posts · sorted newest first · consensus across all models
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {tweets.some((t) => t.source === "x") ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="text-xs font-black uppercase tracking-wide text-slate-400">
+                  Timestamp
+                </label>
+                <select
+                  value={timestampFilter}
+                  onChange={(e) => setTimestampFilter(e.target.value)}
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                >
+                  {TIME_FILTERS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {tweets.some((t) => t.source === "x") && (
                   <span className="text-sm px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
                     Live X
-                  </span>
-                ) : (
-                  <span className="text-sm px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">
-                    Local fallback
                   </span>
                 )}
               </div>
             </div>
-            <DistBar tweets={tweets} />
+            {filteredTweets.length ? (
+              <DistBar tweets={filteredTweets} />
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+                No posts match the selected timestamp filter.
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
-            {tweets.map((tweet, index) => (
+            {filteredTweets.map((tweet, index) => (
               <TweetCard key={tweet.id || index} tweet={tweet} index={index} />
             ))}
           </div>

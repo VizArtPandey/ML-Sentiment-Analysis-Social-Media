@@ -89,19 +89,17 @@ function mockPredict(text) {
   const other = (1 - conf) / 2;
   const scores =
     label === "positive"
-      ? { positive: conf, negative: other, neutral: 1 - conf - other, mixed: 0 }
+      ? { positive: conf, negative: other, neutral: 1 - conf - other }
       : label === "negative"
         ? {
             negative: conf,
             positive: other,
             neutral: 1 - conf - other,
-            mixed: 0,
           }
         : {
             neutral: conf,
             positive: (1 - conf) * 0.45,
             negative: (1 - conf) * 0.55,
-            mixed: 0,
           };
   return { label, confidence: conf, scores };
 }
@@ -120,20 +118,17 @@ function buildMockResults(text) {
             positive: conf,
             negative: other,
             neutral: 1 - conf - other,
-            mixed: 0,
           }
         : base.label === "negative"
           ? {
               negative: conf,
               positive: other,
               neutral: 1 - conf - other,
-              mixed: 0,
             }
           : {
               neutral: conf,
               positive: (1 - conf) * 0.45,
               negative: (1 - conf) * 0.55,
-              mixed: 0,
             };
     return { label: base.label, confidence: conf, scores };
   };
@@ -169,13 +164,6 @@ const QUICK_SENT = {
     dot: "bg-slate-400",
     icon: "😐",
   },
-  mixed: {
-    bg: "bg-gradient-to-r from-amber-50 to-yellow-50",
-    border: "border-amber-300",
-    pill: "bg-amber-100 text-amber-800 border-amber-300",
-    dot: "bg-amber-500",
-    icon: "◐",
-  },
 };
 
 export function quickConsensus(results) {
@@ -205,6 +193,12 @@ export function quickConsensus(results) {
 function AnalyzedTextBanner({ text, results }) {
   const label = quickConsensus(results);
   const s = QUICK_SENT[label] ?? QUICK_SENT.neutral;
+  const wasTranslated = Boolean(results?.was_translated);
+  const srcLangName = results?.source_language_name;
+  const srcLangCode = (results?.source_language || "").toUpperCase();
+  const translated = results?.translated_text;
+  const isRTL = ["AR", "HE", "UR", "FA"].includes(srcLangCode);
+
   return (
     <div
       className={`rounded-2xl border-2 p-5 animate-fade-in ${s.bg} ${s.border}`}
@@ -226,10 +220,28 @@ function AnalyzedTextBanner({ text, results }) {
                 {label.charAt(0).toUpperCase() + label.slice(1)}
               </span>
             )}
+            {wasTranslated && srcLangName && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-bold">
+                🌍 Translated from {srcLangName}
+              </span>
+            )}
           </div>
-          <p className="text-gray-900 text-base font-medium leading-relaxed">
+          <p
+            className="text-gray-900 text-base font-medium leading-relaxed"
+            dir={isRTL ? "rtl" : "ltr"}
+          >
             &ldquo;{text}&rdquo;
           </p>
+          {wasTranslated && translated && (
+            <div className="mt-3 pt-3 border-t border-white/60">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-500 mb-1">
+                Translated to English
+              </p>
+              <p className="text-sm text-slate-700 italic leading-relaxed">
+                &ldquo;{translated}&rdquo;
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -238,7 +250,7 @@ function AnalyzedTextBanner({ text, results }) {
 
 function CurrentModelStats({ results }) {
   if (!results) return null;
-  const counts = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
+  const counts = { positive: 0, negative: 0, neutral: 0 };
   const keys = ["vader", "lr", "rf", "svm", "bilstm"];
   let total = 0;
   keys.forEach((k) => {
@@ -278,18 +290,9 @@ function CurrentModelStats({ results }) {
       bar: "bg-slate-400",
       icon: "😐",
     },
-    {
-      label: "mixed",
-      color: "text-amber-700",
-      bg: "bg-amber-50",
-      border: "border-amber-200",
-      track: "bg-amber-200/50",
-      bar: "bg-amber-500",
-      icon: "🤔",
-    },
   ];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-in">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in">
       {items.map(({ label, color, bg, border, track, bar, icon }) => (
         <div
           key={label}
@@ -334,12 +337,7 @@ export default function Home() {
     setAttention(null);
     setAnalyzedText(text);
     try {
-      let data;
-      try {
-        data = await predictAll(text);
-      } catch {
-        data = buildMockResults(text);
-      }
+      const data = await predictAll(text);
       setResults(data);
       if (data.attention) {
         setAttention(data.attention);
@@ -361,7 +359,10 @@ export default function Home() {
         },
       ]);
     } catch {
-      setError("Analysis failed. Please try again.");
+      setResults(null);
+      setError(
+        "API is offline or unreachable. Start backend on port 8000 and try again.",
+      );
     } finally {
       setLoading(false);
     }

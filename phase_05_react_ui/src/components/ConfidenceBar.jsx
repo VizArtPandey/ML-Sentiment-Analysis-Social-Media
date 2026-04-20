@@ -2,7 +2,6 @@ const COLORS = {
   positive: { bar: 'bg-emerald-500', text: 'text-emerald-700', track: 'bg-emerald-100' },
   negative: { bar: 'bg-red-500',     text: 'text-red-700',     track: 'bg-red-100'     },
   neutral:  { bar: 'bg-slate-400',   text: 'text-slate-600',   track: 'bg-slate-100'   },
-  mixed:    { bar: 'bg-amber-500',   text: 'text-amber-700',   track: 'bg-amber-100'   },
 }
 
 export default function ConfidenceBar({ label, value }) {

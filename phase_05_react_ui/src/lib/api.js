@@ -30,6 +30,11 @@ export async function predictBatch(texts, models = ['all']) {
   return data
 }
 
+export async function getAccuracyScaling() {
+  const { data } = await client.get('/accuracy-scaling')
+  return data
+}
+
 export async function getLiveEval(n = 10, hashtag = '', bearerToken = '') {
   const params = { n }
   if (hashtag) params.hashtag = hashtag

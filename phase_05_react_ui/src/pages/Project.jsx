@@ -1,4 +1,366 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAccuracyScaling } from "../lib/api";
+
+const FALLBACK_SCALING = [
+  {
+    Dataset_Fraction: 0.1,
+    Train_Size: 4763,
+    Model: "Logistic Regression",
+    Positive_Accuracy: 50.67,
+    Negative_Accuracy: 55.32,
+    Neutral_Accuracy: 42.1,
+    Macro_F1: 49.4,
+    Positive_Accuracy_Std: 2.1,
+    Negative_Accuracy_Std: 2.4,
+    Neutral_Accuracy_Std: 3.2,
+    Macro_F1_Std: 2.6,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.1,
+    Train_Size: 4763,
+    Model: "Random Forest",
+    Positive_Accuracy: 43.5,
+    Negative_Accuracy: 38.96,
+    Neutral_Accuracy: 55.7,
+    Macro_F1: 44.2,
+    Positive_Accuracy_Std: 3.0,
+    Negative_Accuracy_Std: 3.6,
+    Neutral_Accuracy_Std: 2.5,
+    Macro_F1_Std: 3.1,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.1,
+    Train_Size: 4763,
+    Model: "VADER",
+    Positive_Accuracy: 48.2,
+    Negative_Accuracy: 52.1,
+    Neutral_Accuracy: 44.5,
+    Macro_F1: 48.1,
+    Positive_Accuracy_Std: 0.0,
+    Negative_Accuracy_Std: 0.0,
+    Neutral_Accuracy_Std: 0.0,
+    Macro_F1_Std: 0.0,
+    Seeds_Used: 1,
+  },
+  {
+    Dataset_Fraction: 0.1,
+    Train_Size: 4763,
+    Model: "SVM",
+    Positive_Accuracy: 51.8,
+    Negative_Accuracy: 56.4,
+    Neutral_Accuracy: 43.3,
+    Macro_F1: 50.3,
+    Positive_Accuracy_Std: 2.2,
+    Negative_Accuracy_Std: 2.7,
+    Neutral_Accuracy_Std: 3.0,
+    Macro_F1_Std: 2.8,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.3,
+    Train_Size: 14289,
+    Model: "Logistic Regression",
+    Positive_Accuracy: 55.33,
+    Negative_Accuracy: 59.03,
+    Neutral_Accuracy: 48.9,
+    Macro_F1: 54.2,
+    Positive_Accuracy_Std: 1.4,
+    Negative_Accuracy_Std: 1.6,
+    Neutral_Accuracy_Std: 2.1,
+    Macro_F1_Std: 1.7,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.3,
+    Train_Size: 14289,
+    Model: "Random Forest",
+    Positive_Accuracy: 36.24,
+    Negative_Accuracy: 35.97,
+    Neutral_Accuracy: 62.4,
+    Macro_F1: 44.9,
+    Positive_Accuracy_Std: 2.4,
+    Negative_Accuracy_Std: 2.8,
+    Neutral_Accuracy_Std: 1.9,
+    Macro_F1_Std: 2.5,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.3,
+    Train_Size: 14289,
+    Model: "VADER",
+    Positive_Accuracy: 48.4,
+    Negative_Accuracy: 52.3,
+    Neutral_Accuracy: 44.6,
+    Macro_F1: 48.3,
+    Positive_Accuracy_Std: 0.0,
+    Negative_Accuracy_Std: 0.0,
+    Neutral_Accuracy_Std: 0.0,
+    Macro_F1_Std: 0.0,
+    Seeds_Used: 1,
+  },
+  {
+    Dataset_Fraction: 0.3,
+    Train_Size: 14289,
+    Model: "SVM",
+    Positive_Accuracy: 56.9,
+    Negative_Accuracy: 61.2,
+    Neutral_Accuracy: 50.1,
+    Macro_F1: 55.9,
+    Positive_Accuracy_Std: 1.5,
+    Negative_Accuracy_Std: 1.7,
+    Neutral_Accuracy_Std: 2.0,
+    Macro_F1_Std: 1.8,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.5,
+    Train_Size: 23815,
+    Model: "Logistic Regression",
+    Positive_Accuracy: 59.13,
+    Negative_Accuracy: 65.43,
+    Neutral_Accuracy: 52.4,
+    Macro_F1: 58.7,
+    Positive_Accuracy_Std: 1.1,
+    Negative_Accuracy_Std: 1.3,
+    Neutral_Accuracy_Std: 1.7,
+    Macro_F1_Std: 1.3,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.5,
+    Train_Size: 23815,
+    Model: "Random Forest",
+    Positive_Accuracy: 38.83,
+    Negative_Accuracy: 43.81,
+    Neutral_Accuracy: 64.2,
+    Macro_F1: 48.3,
+    Positive_Accuracy_Std: 2.0,
+    Negative_Accuracy_Std: 2.3,
+    Neutral_Accuracy_Std: 1.6,
+    Macro_F1_Std: 2.0,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.5,
+    Train_Size: 23815,
+    Model: "VADER",
+    Positive_Accuracy: 48.6,
+    Negative_Accuracy: 52.4,
+    Neutral_Accuracy: 44.7,
+    Macro_F1: 48.4,
+    Positive_Accuracy_Std: 0.0,
+    Negative_Accuracy_Std: 0.0,
+    Neutral_Accuracy_Std: 0.0,
+    Macro_F1_Std: 0.0,
+    Seeds_Used: 1,
+  },
+  {
+    Dataset_Fraction: 0.5,
+    Train_Size: 23815,
+    Model: "SVM",
+    Positive_Accuracy: 60.3,
+    Negative_Accuracy: 66.8,
+    Neutral_Accuracy: 53.1,
+    Macro_F1: 60.0,
+    Positive_Accuracy_Std: 1.2,
+    Negative_Accuracy_Std: 1.4,
+    Neutral_Accuracy_Std: 1.8,
+    Macro_F1_Std: 1.4,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.7,
+    Train_Size: 33341,
+    Model: "Logistic Regression",
+    Positive_Accuracy: 58.19,
+    Negative_Accuracy: 66.48,
+    Neutral_Accuracy: 54.2,
+    Macro_F1: 59.6,
+    Positive_Accuracy_Std: 0.9,
+    Negative_Accuracy_Std: 1.1,
+    Neutral_Accuracy_Std: 1.5,
+    Macro_F1_Std: 1.1,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.7,
+    Train_Size: 33341,
+    Model: "Random Forest",
+    Positive_Accuracy: 39.82,
+    Negative_Accuracy: 48.01,
+    Neutral_Accuracy: 65.8,
+    Macro_F1: 51.2,
+    Positive_Accuracy_Std: 1.8,
+    Negative_Accuracy_Std: 2.1,
+    Neutral_Accuracy_Std: 1.4,
+    Macro_F1_Std: 1.8,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.7,
+    Train_Size: 33341,
+    Model: "VADER",
+    Positive_Accuracy: 48.7,
+    Negative_Accuracy: 52.5,
+    Neutral_Accuracy: 44.7,
+    Macro_F1: 48.4,
+    Positive_Accuracy_Std: 0.0,
+    Negative_Accuracy_Std: 0.0,
+    Neutral_Accuracy_Std: 0.0,
+    Macro_F1_Std: 0.0,
+    Seeds_Used: 1,
+  },
+  {
+    Dataset_Fraction: 0.7,
+    Train_Size: 33341,
+    Model: "SVM",
+    Positive_Accuracy: 60.1,
+    Negative_Accuracy: 67.9,
+    Neutral_Accuracy: 54.3,
+    Macro_F1: 60.9,
+    Positive_Accuracy_Std: 1.0,
+    Negative_Accuracy_Std: 1.2,
+    Neutral_Accuracy_Std: 1.6,
+    Macro_F1_Std: 1.2,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 1.0,
+    Train_Size: 47631,
+    Model: "Logistic Regression",
+    Positive_Accuracy: 59.26,
+    Negative_Accuracy: 67.14,
+    Neutral_Accuracy: 55.9,
+    Macro_F1: 60.8,
+    Positive_Accuracy_Std: 0.7,
+    Negative_Accuracy_Std: 0.9,
+    Neutral_Accuracy_Std: 1.2,
+    Macro_F1_Std: 0.9,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 1.0,
+    Train_Size: 47631,
+    Model: "Random Forest",
+    Positive_Accuracy: 36.78,
+    Negative_Accuracy: 41.47,
+    Neutral_Accuracy: 68.2,
+    Macro_F1: 48.8,
+    Positive_Accuracy_Std: 1.6,
+    Negative_Accuracy_Std: 1.8,
+    Neutral_Accuracy_Std: 1.2,
+    Macro_F1_Std: 1.5,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 1.0,
+    Train_Size: 47631,
+    Model: "VADER",
+    Positive_Accuracy: 48.8,
+    Negative_Accuracy: 52.6,
+    Neutral_Accuracy: 44.8,
+    Macro_F1: 48.5,
+    Positive_Accuracy_Std: 0.0,
+    Negative_Accuracy_Std: 0.0,
+    Neutral_Accuracy_Std: 0.0,
+    Macro_F1_Std: 0.0,
+    Seeds_Used: 1,
+  },
+  {
+    Dataset_Fraction: 1.0,
+    Train_Size: 47631,
+    Model: "SVM",
+    Positive_Accuracy: 61.2,
+    Negative_Accuracy: 69.4,
+    Neutral_Accuracy: 56.4,
+    Macro_F1: 62.3,
+    Positive_Accuracy_Std: 0.8,
+    Negative_Accuracy_Std: 1.0,
+    Neutral_Accuracy_Std: 1.4,
+    Macro_F1_Std: 1.0,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.1,
+    Train_Size: 4763,
+    Model: "BiLSTM",
+    Positive_Accuracy: 54.2,
+    Negative_Accuracy: 52.6,
+    Neutral_Accuracy: 48.9,
+    Macro_F1: 52.0,
+    Positive_Accuracy_Std: 4.1,
+    Negative_Accuracy_Std: 4.8,
+    Neutral_Accuracy_Std: 4.4,
+    Macro_F1_Std: 4.3,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.3,
+    Train_Size: 14289,
+    Model: "BiLSTM",
+    Positive_Accuracy: 62.4,
+    Negative_Accuracy: 64.3,
+    Neutral_Accuracy: 55.2,
+    Macro_F1: 60.7,
+    Positive_Accuracy_Std: 2.6,
+    Negative_Accuracy_Std: 2.9,
+    Neutral_Accuracy_Std: 2.8,
+    Macro_F1_Std: 2.7,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.5,
+    Train_Size: 23815,
+    Model: "BiLSTM",
+    Positive_Accuracy: 67.8,
+    Negative_Accuracy: 70.1,
+    Neutral_Accuracy: 58.4,
+    Macro_F1: 65.4,
+    Positive_Accuracy_Std: 1.9,
+    Negative_Accuracy_Std: 2.2,
+    Neutral_Accuracy_Std: 2.1,
+    Macro_F1_Std: 2.0,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 0.7,
+    Train_Size: 33341,
+    Model: "BiLSTM",
+    Positive_Accuracy: 71.4,
+    Negative_Accuracy: 73.2,
+    Neutral_Accuracy: 60.8,
+    Macro_F1: 68.5,
+    Positive_Accuracy_Std: 1.5,
+    Negative_Accuracy_Std: 1.8,
+    Neutral_Accuracy_Std: 1.7,
+    Macro_F1_Std: 1.6,
+    Seeds_Used: 3,
+  },
+  {
+    Dataset_Fraction: 1.0,
+    Train_Size: 47631,
+    Model: "BiLSTM",
+    Positive_Accuracy: 74.6,
+    Negative_Accuracy: 76.8,
+    Neutral_Accuracy: 63.2,
+    Macro_F1: 71.5,
+    Positive_Accuracy_Std: 1.2,
+    Negative_Accuracy_Std: 1.4,
+    Neutral_Accuracy_Std: 1.4,
+    Macro_F1_Std: 1.3,
+    Seeds_Used: 3,
+  },
+];
+
+const MODEL_COLOR = {
+  VADER: "#ef4444",
+  "Logistic Regression": "#3b82f6",
+  "Random Forest": "#f97316",
+  SVM: "#8b5cf6",
+  BiLSTM: "#10b981",
+};
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 const BENCHMARK = [
@@ -497,7 +859,7 @@ function MetricsTab() {
             label: "Classes",
             val: "3",
             sub: "Negative · Neutral · Positive",
-            note: "The calibrated UI also supports Mixed edge cases",
+            note: "Matches the three-class tweet_eval sentiment labels",
             color: "#d97706",
             bg: "from-amber-50 to-orange-50",
             ring: "border-amber-200",
@@ -750,6 +1112,66 @@ function MetricsTab() {
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-5 pt-5 border-t border-slate-100 space-y-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2">
+                Split Coverage
+              </p>
+              <div className="space-y-2.5">
+                {[
+                  { label: "Train + Validation", pct: 80.0, count: "36,493" },
+                  { label: "Test", pct: 20.0, count: "9,122" },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-semibold text-slate-600">
+                        {item.label}
+                      </span>
+                      <span className="text-slate-500 font-mono">
+                        {item.count} ({item.pct.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-indigo-500"
+                        style={{ width: `${item.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2">
+                Data Quality Snapshot
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
+                <p>
+                  <span className="font-bold text-slate-700">Language:</span>{" "}
+                  Mostly English tweets; multilingual support is handled at
+                  inference via translation.
+                </p>
+                <p>
+                  <span className="font-bold text-slate-700">Balance:</span>{" "}
+                  Mild class skew (neutral-heavy) with no extreme minority class
+                  collapse.
+                </p>
+                <p>
+                  <span className="font-bold text-slate-700">Noise:</span>{" "}
+                  Social text includes emoji, hashtags, slang, and sarcasm
+                  patterns.
+                </p>
+                <p>
+                  <span className="font-bold text-slate-700">
+                    Sequence Cap:
+                  </span>{" "}
+                  MAX_LEN keeps long-tail tweets bounded for stable training.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1054,105 +1476,206 @@ function ArchTab() {
   return (
     <div className="space-y-12">
       {/* ── Hero: system overview ── */}
-      <div className="relative bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 15% 60%, rgba(99,102,241,0.25) 0%, transparent 50%), radial-gradient(circle at 85% 20%, rgba(16,185,129,0.2) 0%, transparent 45%)",
-          }}
-        />
-        <div className="relative z-10 p-8 pb-0">
-          <p className="text-xs font-black uppercase tracking-widest text-indigo-300 mb-2">
-            System Architecture
-          </p>
-          <h2 className="text-3xl font-extrabold text-white mb-3">
-            Multi-Model Sentiment Pipeline
-          </h2>
-          <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-            A layered architecture combining rule-based lexicons, classical ML
-            classifiers, and a deep contextual model — fused through
-            confidence-weighted consensus and served via REST API.
-          </p>
-        </div>
-
-        {/* Flow diagram — full-width strip */}
-        <div className="relative z-10 mt-8 px-8 pb-8">
-          <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-white/10 md:grid-cols-5">
-            {[
-              {
-                n: "1",
-                label: "Raw Tweet",
-                sub: "User input text",
-                note: "Original sentence entered in the UI.",
-                icon: "💬",
-                bg: "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950",
-                border: "border-slate-400/30",
-              },
-              {
-                n: "2",
-                label: "Preprocess",
-                sub: "Clean · normalise · tokenise",
-                note: "URLs, mentions, casing, and tokens are standardised.",
-                icon: "🧹",
-                bg: "bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-800",
-                border: "border-cyan-300/30",
-              },
-              {
-                n: "3",
-                label: "5 Models",
-                sub: "VADER · LR · RF · SVM · BiLSTM",
-                note: "Different model families score the same text.",
-                icon: "🤖",
-                bg: "bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-800",
-                border: "border-indigo-300/30",
-              },
-              {
-                n: "4",
-                label: "Consensus",
-                sub: "Confidence-weighted vote",
-                note: "Model confidence decides how much each vote counts.",
-                icon: "⚖️",
-                bg: "bg-gradient-to-br from-fuchsia-600 via-violet-700 to-indigo-800",
-                border: "border-fuchsia-300/30",
-              },
-              {
-                n: "5",
-                label: "Verdict",
-                sub: "Positive · Neutral · Negative · Mixed",
-                note: "Calibrated final label shown in the UI.",
-                icon: "✅",
-                bg: "bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800",
-                border: "border-emerald-300/30",
-              },
-            ].map((step, i) => (
-              <div
-                key={step.label}
-                className={`relative min-h-[210px] border-b md:border-b-0 md:border-r ${step.border} ${step.bg} p-5 text-center shadow-inner last:border-r-0`}
-              >
-                <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
-                {i < 4 && (
-                  <div className="absolute right-3 top-1/2 hidden -translate-y-1/2 text-3xl font-light text-white/30 md:block">
-                    →
-                  </div>
-                )}
-                <div className="mx-auto flex h-full max-w-[15rem] flex-col items-center justify-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/12 text-sm font-black text-white/80 shadow-sm">
-                    {step.n}
-                  </div>
-                  <div className="text-3xl drop-shadow-sm">{step.icon}</div>
-                  <p className="text-white text-lg font-extrabold leading-tight">
-                    {step.label}
-                  </p>
-                  <p className="text-white/70 text-xs leading-tight">
-                    {step.sub}
-                  </p>
-                  <p className="text-white/50 text-[11px] leading-relaxed">
-                    {step.note}
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-6 sm:px-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-cyan-300">
+                System Architecture
+              </p>
+              <h2 className="mt-2 text-3xl font-extrabold leading-tight text-white">
+                Multi-Model Sentiment Pipeline
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
+                A reproducible inference system that accepts raw social text,
+                normalizes multilingual input, routes features into five
+                independent sentiment models, and returns a calibrated
+                confidence-weighted verdict with model-level explanations.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[440px]">
+              {[
+                ["5", "models"],
+                ["3", "classes"],
+                ["2", "feature paths"],
+                ["1", "API"],
+              ].map(([value, label]) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
+                >
+                  <p className="text-2xl font-black text-white">{value}</p>
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-slate-400">
+                    {label}
                   </p>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 sm:p-8">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {[
+              {
+                step: "01",
+                title: "Input & Language Normalization",
+                body: "Text can come from manual input, CSV batch rows, or live tweet evaluation. The language guard detects non-English text and translates it before inference so every model receives consistent English input.",
+                items: [
+                  "manual / batch / live posts",
+                  "language detection",
+                  "translation metadata",
+                ],
+                col: "blue",
+              },
+              {
+                step: "02",
+                title: "Parallel Model Inference",
+                body: "The same cleaned post is split into two feature paths: TF-IDF for VADER, LR, RF, and SVM; token sequences for BiLSTM with attention. This keeps classical and neural evidence comparable.",
+                items: [
+                  "TF-IDF path",
+                  "sequence path",
+                  "per-model probabilities",
+                ],
+                col: "violet",
+              },
+              {
+                step: "03",
+                title: "Consensus, Explanation & UI",
+                body: "FastAPI combines model probabilities using confidence-weighted voting, then React displays the final verdict, individual model cards, attention cues, history, and scaling diagnostics.",
+                items: [
+                  "weighted consensus",
+                  "attention view",
+                  "accuracy scaling",
+                ],
+                col: "emerald",
+              },
+            ].map((stage, index) => {
+              const cl = C[stage.col];
+              return (
+                <div
+                  key={stage.title}
+                  className={`relative rounded-2xl border-2 p-5 ${cl.bg} ${cl.border}`}
+                >
+                  {index < 2 && (
+                    <div className="absolute -right-3 top-1/2 hidden h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 lg:grid">
+                      →
+                    </div>
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${cl.num} text-sm font-black text-white shadow-sm`}
+                    >
+                      {stage.step}
+                    </div>
+                    <span
+                      className={`rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${cl.text} ring-1 ${cl.border}`}
+                    >
+                      Runtime
+                    </span>
+                  </div>
+                  <h3 className={`mt-4 text-lg font-extrabold ${cl.text}`}>
+                    {stage.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    {stage.body}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-white/70 pt-4">
+                    {stage.items.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-lg bg-white/80 px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500">
+                Why the design is defensible
+              </p>
+              <div className="mt-4 space-y-3">
+                {[
+                  [
+                    "Reproducible data",
+                    "Uses tweet_eval/sentiment rather than a one-off scraped dataset.",
+                  ],
+                  [
+                    "Independent evidence",
+                    "Compares rule-based, linear, tree, margin, and neural models.",
+                  ],
+                  [
+                    "Transparent output",
+                    "Shows individual model votes, confidence, consensus, and attention.",
+                  ],
+                  [
+                    "Scaling proof",
+                    "Includes learning curves so the report can discuss data efficiency.",
+                  ],
+                ].map(([title, body]) => (
+                  <div key={title} className="flex gap-3">
+                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-500" />
+                    <div>
+                      <p className="text-sm font-extrabold text-gray-900">
+                        {title}
+                      </p>
+                      <p className="text-xs leading-relaxed text-slate-500">
+                        {body}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500">
+                Model layer
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
+                {[
+                  ["VADER", "Rule baseline", "#ef4444"],
+                  ["LR", "TF-IDF linear", "#3b82f6"],
+                  ["RF", "Tree ensemble", "#f97316"],
+                  ["SVM", "Calibrated margin", "#8b5cf6"],
+                  ["BiLSTM", "Sequence + attention", "#10b981"],
+                ].map(([name, detail, color]) => (
+                  <div
+                    key={name}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs font-black text-gray-900">
+                        {name}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-snug text-slate-500">
+                      {detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+                  Final output
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-700">
+                  One sentiment label, calibrated confidence, per-class score
+                  breakdown, model agreement count, and optional attention
+                  explanation for the BiLSTM path.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1717,9 +2240,943 @@ function StackTab() {
   );
 }
 
+// ── Accuracy Scaling tab ─────────────────────────────────────────────────────
+function hexToRgba(hex, alpha) {
+  const h = (hex || "#64748b").replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+const SCALING_METRICS = [
+  { key: "Positive_Accuracy", label: "Positive", detail: "Class recall" },
+  { key: "Negative_Accuracy", label: "Negative", detail: "Class recall" },
+  { key: "Neutral_Accuracy", label: "Neutral", detail: "Class recall" },
+  { key: "Macro_F1", label: "Macro-F1", detail: "Balanced score" },
+  {
+    key: "Test_Accuracy",
+    label: "Test accuracy",
+    detail: "Overall held-out accuracy",
+  },
+  {
+    key: "Accuracy_Gap",
+    label: "Train-test gap",
+    detail: "Overfitting signal",
+  },
+];
+
+function asNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatPct(value, digits = 1) {
+  const n = asNumber(value);
+  return n === null ? "n/a" : `${n.toFixed(digits)}%`;
+}
+
+function formatRunStability(value) {
+  const runs = Math.round(asNumber(value) ?? 0);
+  if (!runs) return "n/a";
+  return runs > 1 ? `${runs}-run mean` : "diagnostic run";
+}
+
+function formatStdBand(value) {
+  const n = asNumber(value);
+  return n === null || n === 0 ? "" : `+/- ${n.toFixed(1)}pp`;
+}
+
+function normalizeScalingRows(rows) {
+  return rows.map((row) => {
+    const pos = asNumber(row.Positive_Accuracy);
+    const neg = asNumber(row.Negative_Accuracy);
+    const neu = asNumber(row.Neutral_Accuracy);
+    const macro = asNumber(row.Macro_F1);
+    const fallbackAccuracy =
+      asNumber(row.Test_Accuracy) ??
+      macro ??
+      [pos, neg, neu]
+        .filter((v) => v !== null)
+        .reduce((sum, v, _, arr) => sum + v / arr.length, 0);
+
+    const trainAccuracy = asNumber(row.Train_Accuracy);
+    return {
+      ...row,
+      Dataset_Fraction: asNumber(row.Dataset_Fraction) ?? 0,
+      Train_Size: Math.round(asNumber(row.Train_Size) ?? 0),
+      Test_Size: Math.round(asNumber(row.Test_Size) ?? 0),
+      Positive_Accuracy: pos,
+      Negative_Accuracy: neg,
+      Neutral_Accuracy: neu,
+      Macro_F1: macro,
+      Test_Accuracy: fallbackAccuracy,
+      Train_Accuracy: trainAccuracy,
+      Accuracy_Gap:
+        asNumber(row.Accuracy_Gap) ??
+        (trainAccuracy !== null && fallbackAccuracy !== null
+          ? trainAccuracy - fallbackAccuracy
+          : null),
+    };
+  });
+}
+
+function metricConfig(metric) {
+  return SCALING_METRICS.find((m) => m.key === metric) || SCALING_METRICS[0];
+}
+
+function ScalingChart({ rows, metric, selectedModels }) {
+  const visibleRows = rows.filter(
+    (r) =>
+      selectedModels.includes(r.Model) &&
+      asNumber(r[metric]) !== null &&
+      r.Train_Size > 0,
+  );
+  const models = Array.from(new Set(visibleRows.map((r) => r.Model)));
+  const sizes = Array.from(new Set(visibleRows.map((r) => r.Train_Size))).sort(
+    (a, b) => a - b,
+  );
+  const W = 640,
+    H = 260,
+    pad = { l: 44, r: 18, t: 16, b: 34 };
+  const metricValues = visibleRows
+    .map((r) => r[metric])
+    .filter((v) => asNumber(v) !== null);
+  const rawMin = Math.min(...metricValues, metric === "Accuracy_Gap" ? 0 : 100);
+  const rawMax = Math.max(...metricValues, metric === "Accuracy_Gap" ? 0 : 0);
+  const yMin = metric === "Accuracy_Gap" ? Math.floor((rawMin - 3) / 5) * 5 : 0;
+  const yMax =
+    metric === "Accuracy_Gap" ? Math.ceil((rawMax + 3) / 5) * 5 : 100;
+  const xMax = Math.log10(sizes[sizes.length - 1] || 1);
+  const xMin = Math.log10(sizes[0] || 1);
+  const sx = (v) =>
+    pad.l + ((Math.log10(v) - xMin) / (xMax - xMin || 1)) * (W - pad.l - pad.r);
+  const sy = (v) =>
+    H - pad.b - ((v - yMin) / (yMax - yMin)) * (H - pad.t - pad.b);
+  const yTicks =
+    metric === "Accuracy_Gap"
+      ? [yMin, 0, yMax].filter((v, i, arr) => arr.indexOf(v) === i)
+      : [0, 25, 50, 75, 100];
+  const stdKey = `${metric}_Std`;
+  const clampMetric = (v) =>
+    metric === "Accuracy_Gap"
+      ? Math.max(yMin, Math.min(yMax, v))
+      : Math.max(0, Math.min(100, v));
+
+  if (!visibleRows.length) {
+    return (
+      <div className="h-56 grid place-items-center text-xs text-slate-400">
+        No data for this selection.
+      </div>
+    );
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+      {yTicks.map((t) => (
+        <g key={t}>
+          <line
+            x1={pad.l}
+            x2={W - pad.r}
+            y1={sy(t)}
+            y2={sy(t)}
+            stroke="#e2e8f0"
+            strokeDasharray="3 3"
+          />
+          <text
+            x={pad.l - 8}
+            y={sy(t) + 4}
+            fontSize="10"
+            textAnchor="end"
+            fill="#94a3b8"
+          >
+            {t}%
+          </text>
+        </g>
+      ))}
+      {sizes.map((s) => (
+        <text
+          key={s}
+          x={sx(s)}
+          y={H - 12}
+          fontSize="10"
+          textAnchor="middle"
+          fill="#94a3b8"
+        >
+          {s >= 1000 ? `${(s / 1000).toFixed(0)}k` : s}
+        </text>
+      ))}
+      {models.map((m) => {
+        const color = MODEL_COLOR[m] || "#64748b";
+        const modelRows = visibleRows
+          .filter((r) => r.Model === m)
+          .sort((a, b) => a.Train_Size - b.Train_Size);
+        const hasStd = modelRows.some((r) => typeof r[stdKey] === "number");
+
+        const bandPath = hasStd
+          ? [
+              ...modelRows.map(
+                (r) =>
+                  `${sx(r.Train_Size)},${sy(clampMetric(r[metric] + (r[stdKey] || 0)))}`,
+              ),
+              ...modelRows
+                .slice()
+                .reverse()
+                .map(
+                  (r) =>
+                    `${sx(r.Train_Size)},${sy(clampMetric(r[metric] - (r[stdKey] || 0)))}`,
+                ),
+            ].join(" ")
+          : null;
+
+        const linePts = modelRows
+          .map((r) => `${sx(r.Train_Size)},${sy(r[metric])}`)
+          .join(" ");
+
+        return (
+          <g key={m}>
+            {bandPath && (
+              <polygon
+                points={bandPath}
+                fill={hexToRgba(color, 0.12)}
+                stroke="none"
+              />
+            )}
+            <polyline
+              points={linePts}
+              fill="none"
+              stroke={color}
+              strokeWidth="2.5"
+            />
+            {modelRows.map((r, i) => (
+              <circle
+                key={i}
+                cx={sx(r.Train_Size)}
+                cy={sy(r[metric])}
+                r="3.5"
+                fill={color}
+              />
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function TrainTestChart({ rows, selectedModels }) {
+  const visibleRows = rows.filter(
+    (r) =>
+      selectedModels.includes(r.Model) &&
+      asNumber(r.Train_Accuracy) !== null &&
+      asNumber(r.Test_Accuracy) !== null &&
+      r.Train_Size > 0,
+  );
+  const models = Array.from(new Set(visibleRows.map((r) => r.Model)));
+  const sizes = Array.from(new Set(visibleRows.map((r) => r.Train_Size))).sort(
+    (a, b) => a - b,
+  );
+  const W = 640,
+    H = 260,
+    pad = { l: 44, r: 18, t: 16, b: 34 };
+  const xMax = Math.log10(sizes[sizes.length - 1] || 1);
+  const xMin = Math.log10(sizes[0] || 1);
+  const sx = (v) =>
+    pad.l + ((Math.log10(v) - xMin) / (xMax - xMin || 1)) * (W - pad.l - pad.r);
+  const sy = (v) => H - pad.b - (v / 100) * (H - pad.t - pad.b);
+  const yTicks = [0, 25, 50, 75, 100];
+
+  if (!visibleRows.length) {
+    return (
+      <div className="h-56 grid place-items-center text-xs text-slate-400">
+        Run the updated scaling script to populate train/test gap data.
+      </div>
+    );
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+      {yTicks.map((t) => (
+        <g key={t}>
+          <line
+            x1={pad.l}
+            x2={W - pad.r}
+            y1={sy(t)}
+            y2={sy(t)}
+            stroke="#e2e8f0"
+            strokeDasharray="3 3"
+          />
+          <text
+            x={pad.l - 8}
+            y={sy(t) + 4}
+            fontSize="10"
+            textAnchor="end"
+            fill="#94a3b8"
+          >
+            {t}%
+          </text>
+        </g>
+      ))}
+      {sizes.map((s) => (
+        <text
+          key={s}
+          x={sx(s)}
+          y={H - 12}
+          fontSize="10"
+          textAnchor="middle"
+          fill="#94a3b8"
+        >
+          {s >= 1000 ? `${(s / 1000).toFixed(s < 10000 ? 1 : 0)}k` : s}
+        </text>
+      ))}
+      {models.map((m) => {
+        const color = MODEL_COLOR[m] || "#64748b";
+        const modelRows = visibleRows
+          .filter((r) => r.Model === m)
+          .sort((a, b) => a.Train_Size - b.Train_Size);
+        const trainPts = modelRows
+          .map((r) => `${sx(r.Train_Size)},${sy(r.Train_Accuracy)}`)
+          .join(" ");
+        const testPts = modelRows
+          .map((r) => `${sx(r.Train_Size)},${sy(r.Test_Accuracy)}`)
+          .join(" ");
+        return (
+          <g key={m}>
+            <polyline
+              points={trainPts}
+              fill="none"
+              stroke={color}
+              strokeWidth="2.2"
+            />
+            <polyline
+              points={testPts}
+              fill="none"
+              stroke={color}
+              strokeWidth="2.2"
+              strokeDasharray="6 4"
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function ScalingTab() {
+  const [rows, setRows] = useState(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState("Positive_Accuracy");
+  const [selectedModels, setSelectedModels] = useState([]);
+
+  useEffect(() => {
+    getAccuracyScaling()
+      .then((data) => {
+        const normalized = normalizeScalingRows(data.rows || []);
+        setRows(normalized);
+        setSelectedModels(Array.from(new Set(normalized.map((r) => r.Model))));
+        setUpdatedAt(data.updated_at);
+      })
+      .catch(() => {
+        const normalized = normalizeScalingRows(FALLBACK_SCALING);
+        setRows(normalized);
+        setSelectedModels(Array.from(new Set(normalized.map((r) => r.Model))));
+        setUsingFallback(true);
+      });
+  }, []);
+
+  if (!rows) {
+    return (
+      <div className="py-12 text-center text-slate-400 text-sm">
+        Loading accuracy-scaling results…
+      </div>
+    );
+  }
+
+  const models = Array.from(new Set(rows.map((r) => r.Model)));
+  const sizes = Array.from(new Set(rows.map((r) => r.Train_Size))).sort(
+    (a, b) => a - b,
+  );
+  const activeModels = selectedModels.length ? selectedModels : models;
+  const availableMetrics = SCALING_METRICS.filter((metric) =>
+    rows.some((r) => asNumber(r[metric.key]) !== null),
+  );
+  const activeMetric = availableMetrics.some((m) => m.key === selectedMetric)
+    ? selectedMetric
+    : availableMetrics[0]?.key || "Positive_Accuracy";
+  const activeMetricConfig = metricConfig(activeMetric);
+  const byModelAtMax = models.map((m) => {
+    const row = rows.find(
+      (r) => r.Model === m && r.Train_Size === sizes[sizes.length - 1],
+    );
+    return { model: m, ...row };
+  });
+  const peakRows = models
+    .map(
+      (m) =>
+        rows
+          .filter((r) => r.Model === m && asNumber(r.Test_Accuracy) !== null)
+          .sort((a, b) => b.Test_Accuracy - a.Test_Accuracy)[0],
+    )
+    .filter(Boolean)
+    .sort((a, b) => b.Test_Accuracy - a.Test_Accuracy);
+  const bestFinal = BENCHMARK[0];
+  const sortedRows = rows
+    .filter((r) => activeModels.includes(r.Model))
+    .sort(
+      (a, b) => a.Train_Size - b.Train_Size || a.Model.localeCompare(b.Model),
+    );
+  const scaleGroups = Array.from(
+    sortedRows
+      .reduce((map, row) => {
+        const key = row.Train_Size;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(row);
+        return map;
+      }, new Map())
+      .entries(),
+  ).map(([trainSize, groupRows]) => {
+    const orderedRows = groupRows
+      .slice()
+      .sort(
+        (a, b) =>
+          (asNumber(b.Test_Accuracy) ?? -1) - (asNumber(a.Test_Accuracy) ?? -1),
+      );
+    const first = orderedRows[0] || {};
+    return {
+      trainSize,
+      testSize: first.Test_Size,
+      fraction: first.Dataset_Fraction,
+      bestModel: first.Model,
+      rows: orderedRows,
+    };
+  });
+
+  const toggleModel = (model) => {
+    setSelectedModels((current) => {
+      const active = current.length ? current : models;
+      if (active.includes(model)) {
+        return active.length === 1 ? active : active.filter((m) => m !== model);
+      }
+      return [...active, model];
+    });
+  };
+
+  return (
+    <div className="space-y-8">
+      <SectionHeader
+        tag="📈 Accuracy & Scaling"
+        title="Per-Class Accuracy as Dataset Size Grows"
+        sub="Learning-curve diagnostics across model families, class recalls, macro-F1, and train/test accuracy"
+      />
+
+      {usingFallback && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+          <span>⚠️</span>
+          Live data not available — showing sample scaling curves. Run
+          <code className="mx-1 font-mono bg-amber-100 px-1 rounded">
+            phase_03_classical_models/07_accuracy_scaling.py --include-bilstm
+          </code>
+          and restart the API to see live numbers.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.65fr] gap-4">
+        <div className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-blue-600">
+                How to read the lower accuracy
+              </p>
+              <h3 className="mt-1 text-xl font-extrabold text-gray-900">
+                This is a scaling diagnostic, not the final tuned benchmark
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+                Each point retrains models under the same lightweight budget so
+                we can measure whether more data improves held-out accuracy. The
+                final tuned benchmark is still reported separately in
+                Performance Metrics, where BiLSTM reaches{" "}
+                <span className="font-black text-emerald-700">
+                  {(bestFinal.f1 * 100).toFixed(1)}% macro-F1
+                </span>
+                .
+              </p>
+            </div>
+            <div className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 ring-1 ring-blue-100">
+              Purpose: trend analysis, not leaderboard score
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              {
+                title: "Why accuracy is lower",
+                body: "The run measures strict 3-class accuracy. Neutral tweets are ambiguous, short, and often context-dependent.",
+                col: "amber",
+              },
+              {
+                title: "Why BiLSTM is lower here",
+                body: "The scaling sweep retrains a compact model per fraction for speed; the final BiLSTM uses the tuned training setup.",
+                col: "emerald",
+              },
+              {
+                title: "How to increase it",
+                body: "Use the full BiLSTM recipe per fraction, class weights or focal loss, threshold calibration, and a transformer encoder.",
+                col: "violet",
+              },
+            ].map((item) => {
+              const cl = C[item.col];
+              return (
+                <div
+                  key={item.title}
+                  className={`rounded-2xl border p-4 ${cl.bg} ${cl.border}`}
+                >
+                  <p className={`text-sm font-extrabold ${cl.text}`}>
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    {item.body}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white shadow-sm">
+          <p className="text-xs font-black uppercase tracking-widest text-cyan-300">
+            Benchmark context
+          </p>
+          <p className="mt-3 text-4xl font-black">
+            {(bestFinal.f1 * 100).toFixed(1)}%
+          </p>
+          <p className="mt-1 text-sm font-bold text-slate-200">
+            final BiLSTM macro-F1
+          </p>
+          <p className="mt-4 text-xs leading-relaxed text-slate-400">
+            The lower scaling accuracy is expected because this panel isolates
+            data-size sensitivity. The headline model quality is the final tuned
+            benchmark, while this panel explains why more data helps and where
+            it plateaus.
+          </p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide font-extrabold text-slate-400">
+              Metric
+            </p>
+            <h3 className="text-lg font-extrabold text-gray-900">
+              {activeMetricConfig.label}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {activeMetricConfig.detail}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {availableMetrics.map((metric) => (
+              <button
+                key={metric.key}
+                type="button"
+                onClick={() => setSelectedMetric(metric.key)}
+                className={`px-3 py-2 rounded-lg text-xs font-extrabold border transition ${
+                  activeMetric === metric.key
+                    ? "bg-indigo-600 border-indigo-600 text-white"
+                    : "bg-white border-slate-200 text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+                }`}
+              >
+                {metric.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {models.map((m) => {
+            const isActive = activeModels.includes(m);
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => toggleModel(m)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition ${
+                  isActive
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: MODEL_COLOR[m] || "#64748b" }}
+                />
+                {m}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Peak diagnostic cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        {peakRows.map((item) => {
+          const color = MODEL_COLOR[item.Model] || "#64748b";
+          return (
+            <div
+              key={item.Model}
+              className="rounded-2xl border bg-white p-4 shadow-sm"
+              style={{ borderColor: `${color}55` }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+                <p className="text-xs font-extrabold text-gray-900">
+                  {item.Model}
+                </p>
+              </div>
+              <p className="text-2xl font-black text-gray-900">
+                {formatPct(item.Test_Accuracy)}
+              </p>
+              <p className="text-[11px] text-slate-500 leading-snug mt-1">
+                peak diagnostic accuracy at {item.Train_Size?.toLocaleString()}{" "}
+                training samples
+              </p>
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                  {formatRunStability(item.Seeds_Used)}
+                </span>
+                {formatStdBand(item.Test_Accuracy_Std) && (
+                  <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">
+                    {formatStdBand(item.Test_Accuracy_Std)}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 justify-center">
+        {models.map((m) => (
+          <div
+            key={m}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700"
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: MODEL_COLOR[m] || "#64748b" }}
+            />
+            {m}
+          </div>
+        ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="mb-3">
+            <h3 className="text-base font-bold text-gray-900">
+              {activeMetricConfig.label} Scaling Curve
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Mean across repeat runs with shaded standard-deviation bands ·
+              log-scaled X axis
+            </p>
+          </div>
+          <ScalingChart
+            rows={rows}
+            metric={activeMetric}
+            selectedModels={activeModels}
+          />
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="mb-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Train vs Test Accuracy Gap
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Solid = train accuracy · dashed = test accuracy
+            </p>
+          </div>
+          <TrainTestChart rows={rows} selectedModels={activeModels} />
+        </div>
+      </div>
+
+      {/* Insight cards */}
+      <div>
+        <SectionHeader
+          tag="💡 Findings"
+          title="What the Scaling Curves Tell Us"
+          sub="Use these points when explaining why the diagnostic accuracy is lower than the final benchmark"
+        />
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              title: "No contradiction",
+              body: "Performance Metrics reports the final tuned benchmark. This tab reports a controlled learning-curve experiment, so its accuracy can be lower.",
+              col: "blue",
+            },
+            {
+              title: "Main bottleneck",
+              body: "Neutral is the hardest class because tweets can be factual, sarcastic, or emotionally weak. That pulls strict 3-class accuracy down.",
+              col: "amber",
+            },
+            {
+              title: "Best next upgrade",
+              body: "Run the full BiLSTM/transformer training recipe for every fraction and tune class weights. That is the fastest credible path above this diagnostic range.",
+              col: "emerald",
+            },
+          ].map((item) => {
+            const cl = C[item.col];
+            return (
+              <div
+                key={item.title}
+                className={`rounded-2xl border p-4 ${cl.bg} ${cl.border}`}
+              >
+                <p className={`text-sm font-extrabold ${cl.text}`}>
+                  {item.title}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                  {item.body}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {byModelAtMax.map((m) => {
+            const deltaValue =
+              asNumber(m.Negative_Accuracy) !== null &&
+              asNumber(m.Positive_Accuracy) !== null
+                ? m.Negative_Accuracy - m.Positive_Accuracy
+                : null;
+            const color = MODEL_COLOR[m.model] || "#64748b";
+            return (
+              <div
+                key={m.model}
+                className="rounded-2xl border p-4 bg-white shadow-sm"
+                style={{ borderColor: `${color}55` }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <p className="text-sm font-extrabold text-gray-900">
+                    {m.model}
+                  </p>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  At full scale ({m.Train_Size?.toLocaleString()} samples):{" "}
+                  <span className="font-bold text-emerald-700">
+                    {formatPct(m.Positive_Accuracy)}
+                  </span>{" "}
+                  positive /{" "}
+                  <span className="font-bold text-red-700">
+                    {formatPct(m.Negative_Accuracy)}
+                  </span>{" "}
+                  negative /{" "}
+                  <span className="font-bold text-slate-700">
+                    {formatPct(m.Neutral_Accuracy)}
+                  </span>{" "}
+                  neutral. Negative is{" "}
+                  {deltaValue === null
+                    ? "n/a"
+                    : `${deltaValue >= 0 ? "+" : ""}${deltaValue.toFixed(1)}pp`}{" "}
+                  vs positive.
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Detailed scale cards */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">
+              Detailed Learning-Curve Results
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {updatedAt
+                ? `Last refreshed ${new Date(updatedAt).toLocaleString()}`
+                : "Mean per-class recall × training-set size"}{" "}
+              · grouped by training size for easier comparison
+            </p>
+          </div>
+          <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold">
+            {models.length} models · {sizes.length} scales
+          </span>
+        </div>
+        <div className="space-y-4 bg-slate-50 p-4 sm:p-5">
+          {scaleGroups.map((group) => {
+            const best = group.rows[0];
+            return (
+              <section
+                key={group.trainSize}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+              >
+                <div className="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      {(asNumber(group.fraction) * 100).toFixed(0)}% dataset
+                      fraction
+                    </p>
+                    <h4 className="mt-1 text-lg font-extrabold text-gray-900">
+                      {group.trainSize.toLocaleString()} training samples
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {group.testSize ? group.testSize.toLocaleString() : "n/a"}{" "}
+                      held-out test samples
+                    </p>
+                  </div>
+                  {best && (
+                    <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm ring-1 ring-emerald-200">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                        Best at this scale
+                      </p>
+                      <p className="mt-1 font-extrabold text-emerald-800">
+                        {best.Model} · {formatPct(best.Test_Accuracy)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-5">
+                  {group.rows.map((r) => {
+                    const color = MODEL_COLOR[r.Model] || "#64748b";
+                    const gap = asNumber(r.Accuracy_Gap);
+                    const gapTone =
+                      gap === null
+                        ? "bg-slate-100 text-slate-500 ring-slate-200"
+                        : gap > 25
+                          ? "bg-red-50 text-red-700 ring-red-200"
+                          : gap > 10
+                            ? "bg-amber-50 text-amber-700 ring-amber-200"
+                            : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+                    const gapLabel =
+                      gap === null
+                        ? "gap n/a"
+                        : gap > 25
+                          ? "overfit risk"
+                          : gap > 10
+                            ? "moderate gap"
+                            : "stable gap";
+                    const classMetrics = [
+                      ["Positive", r.Positive_Accuracy, "#059669"],
+                      ["Negative", r.Negative_Accuracy, "#dc2626"],
+                      ["Neutral", r.Neutral_Accuracy, "#64748b"],
+                    ];
+                    return (
+                      <article
+                        key={`${group.trainSize}-${r.Model}`}
+                        className="rounded-2xl border bg-white p-4 shadow-sm"
+                        style={{ borderColor: `${color}44` }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <p className="truncate text-sm font-extrabold text-gray-900">
+                              {r.Model}
+                            </p>
+                          </div>
+                          {r.Model === group.bestModel && (
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 ring-1 ring-emerald-200">
+                              Best
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-4">
+                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                            Test accuracy
+                          </p>
+                          <p className="mt-1 text-3xl font-black text-gray-900">
+                            {formatPct(r.Test_Accuracy)}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          <div className="rounded-xl bg-indigo-50 px-3 py-2 ring-1 ring-indigo-100">
+                            <p className="text-[10px] font-black uppercase tracking-wide text-indigo-500">
+                              Macro-F1
+                            </p>
+                            <p className="mt-1 text-sm font-extrabold text-indigo-800">
+                              {formatPct(r.Macro_F1)}
+                            </p>
+                          </div>
+                          <div
+                            className={`rounded-xl px-3 py-2 ring-1 ${gapTone}`}
+                          >
+                            <p className="text-[10px] font-black uppercase tracking-wide">
+                              {gapLabel}
+                            </p>
+                            <p className="mt-1 text-sm font-extrabold">
+                              {formatPct(r.Accuracy_Gap)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
+                          {classMetrics.map(([label, value, metricColor]) => {
+                            const pct = asNumber(value) ?? 0;
+                            return (
+                              <div key={label}>
+                                <div className="mb-1 flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-slate-600">
+                                    {label}
+                                  </span>
+                                  <span className="text-[11px] font-black text-slate-700">
+                                    {formatPct(value)}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                                  <div
+                                    className="h-full rounded-full"
+                                    style={{
+                                      width: `${Math.max(0, Math.min(100, pct))}%`,
+                                      backgroundColor: metricColor,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                          <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                            Reliability
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-500">
+                            {formatRunStability(r.Seeds_Used)}
+                          </span>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "metrics", label: "Performance Metrics", icon: "📊" },
+  { id: "scaling", label: "Accuracy & Scaling", icon: "📈" },
   { id: "arch", label: "Architecture", icon: "🏗" },
   { id: "decisions", label: "Design Decisions", icon: "🎯" },
   { id: "phase02", label: "Phase 02", icon: "🚀" },
@@ -1766,6 +3223,7 @@ export default function Project() {
 
       {/* Tab content */}
       {tab === "metrics" && <MetricsTab />}
+      {tab === "scaling" && <ScalingTab />}
       {tab === "arch" && <ArchTab />}
       {tab === "decisions" && <DecisionsTab />}
       {tab === "phase02" && <Phase02Tab />}

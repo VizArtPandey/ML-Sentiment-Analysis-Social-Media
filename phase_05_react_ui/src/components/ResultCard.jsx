@@ -1,5 +1,7 @@
 import ConfidenceBar from "./ConfidenceBar";
 
+const SCORE_LABELS = ["positive", "negative", "neutral"];
+
 const SENTIMENT = {
   positive: {
     bg: "bg-gradient-to-br from-emerald-50 to-teal-50",
@@ -27,15 +29,6 @@ const SENTIMENT = {
     badge: "bg-slate-100 text-slate-700",
     bar: "bg-slate-400",
     icon: "😐",
-  },
-  mixed: {
-    bg: "bg-gradient-to-br from-amber-50 to-yellow-50",
-    border: "border-amber-200",
-    ring: "ring-1 ring-amber-100",
-    label: "text-amber-700",
-    badge: "bg-amber-100 text-amber-800",
-    bar: "bg-amber-500",
-    icon: "◐",
   },
 };
 
@@ -97,7 +90,7 @@ export default function ResultCard({ modelName, label, confidence, scores }) {
       {/* Score breakdown */}
       {scores && (
         <div className="space-y-1.5 pt-2 border-t border-white/60">
-          {["positive", "negative", "neutral", "mixed"].map((sent) => (
+          {SCORE_LABELS.map((sent) => (
             <ConfidenceBar key={sent} label={sent} value={scores[sent] ?? 0} />
           ))}
         </div>
