@@ -154,6 +154,17 @@ python phase_06_huggingface_deploy/app.py
 | GET    | `/api/history`                      | Prediction history                                                                 |
 | GET    | `/api/live-eval?hashtag=<tag>&n=10` | X/Twitter hashtag evaluation, with local fallback if no bearer token is configured |
 
+### Multilingual Inference Notes
+
+- The backend auto-detects language using `langdetect` with script and vocabulary fallback heuristics.
+- Non-English input is translated to English before model inference to improve sentiment consistency.
+- `POST /api/predict` returns extra fields:
+  - `source_language` (ISO code, e.g., `ar`, `es`)
+  - `source_language_name` (e.g., `Arabic`, `Spanish`)
+  - `translated_text` (English text used for inference when translation happened)
+  - `was_translated` (boolean)
+- For single-word neutral greetings (for example, "hola"), neutral can still be a valid outcome; better sentiment calibration appears on phrase-level inputs.
+
 ## Dataset
 
 The configured primary dataset is `bdstar/twitter-sentiment-analysis` from

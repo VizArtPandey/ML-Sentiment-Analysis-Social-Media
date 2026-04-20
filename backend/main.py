@@ -16,6 +16,114 @@ from collections import deque
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
+from deep_translator import GoogleTranslator
+translator = GoogleTranslator(source='auto', target='en')
+
+try:
+    from langdetect import detect, DetectorFactory
+    from langdetect.lang_detect_exception import LangDetectException
+    DetectorFactory.seed = 0
+    _HAS_LANGDETECT = True
+except Exception:
+    detect = None
+    LangDetectException = Exception
+    _HAS_LANGDETECT = False
+
+# Unicode-script heuristics for language detection (no extra deps required).
+# Checked in priority order — first match wins.
+_SCRIPT_RANGES = [
+    ("ar", "Arabic",     r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]"),
+    ("hi", "Hindi",      r"[\u0900-\u097F]"),
+    ("bn", "Bengali",    r"[\u0980-\u09FF]"),
+    ("ta", "Tamil",      r"[\u0B80-\u0BFF]"),
+    ("ur", "Urdu",       r"[\u0600-\u06FF\u0750-\u077F]"),   # shares Arabic block
+    ("zh", "Chinese",    r"[\u4E00-\u9FFF]"),
+    ("ja", "Japanese",   r"[\u3040-\u30FF]"),
+    ("ko", "Korean",     r"[\uAC00-\uD7AF]"),
+    ("ru", "Russian",    r"[\u0400-\u04FF]"),
+    ("el", "Greek",      r"[\u0370-\u03FF]"),
+    ("he", "Hebrew",     r"[\u0590-\u05FF]"),
+    ("th", "Thai",       r"[\u0E00-\u0E7F]"),
+]
+
+# Common Latin-script non-English words — cheap hint when script alone is insufficient.
+_LATIN_HINTS = {
+    "es": ("Spanish", {"hola", "gracias", "amigo", "excelente", "terrible", "muy", "pero", "esto", "está", "bueno", "malo"}),
+    "fr": ("French",  {"bonjour", "merci", "très", "mauvais", "bon", "est", "c'est", "je", "suis", "mais"}),
+    "de": ("German",  {"guten", "danke", "sehr", "schlecht", "gut", "ist", "nicht", "aber", "und"}),
+    "pt": ("Portuguese", {"obrigado", "olá", "muito", "bom", "ruim", "mas", "está", "não"}),
+    "it": ("Italian", {"ciao", "grazie", "molto", "buono", "cattivo", "ma", "è", "non"}),
+    "tr": ("Turkish", {"merhaba", "teşekkür", "çok", "iyi", "kötü", "ama", "değil"}),
+    "id": ("Indonesian", {"terima", "kasih", "sangat", "bagus", "buruk", "tapi", "tidak"}),
+    "tl": ("Filipino", {"salamat", "napakaganda", "mabuti", "masama", "ngunit", "hindi"}),
+}
+
+_LANGUAGE_NAMES = {
+    "ar": "Arabic", "hi": "Hindi", "bn": "Bengali", "ta": "Tamil", "ur": "Urdu",
+    "zh": "Chinese", "ja": "Japanese", "ko": "Korean", "ru": "Russian", "el": "Greek",
+    "he": "Hebrew", "th": "Thai", "es": "Spanish", "fr": "French", "de": "German",
+    "pt": "Portuguese", "it": "Italian", "tr": "Turkish", "id": "Indonesian", "tl": "Filipino",
+    "en": "English",
+}
+
+
+def _detect_language(text: str) -> tuple[str, str]:
+    """Return (iso_code, display_name). Falls back to ('en', 'English')."""
+    if not text:
+        return ("en", "English")
+
+    stripped = text.strip()
+    if _HAS_LANGDETECT and stripped:
+        try:
+            code = detect(stripped)
+            return (code, _LANGUAGE_NAMES.get(code, code.upper()))
+        except LangDetectException:
+            pass
+        except Exception:
+            pass
+
+    for code, name, pattern in _SCRIPT_RANGES:
+        if re.search(pattern, text):
+            return (code, name)
+    words = {w.strip(".,!?;:'\"").lower() for w in text.split()}
+    for code, (name, vocab) in _LATIN_HINTS.items():
+        if words & vocab:
+            return (code, name)
+    return ("en", "English")
+
+
+def _ensure_english(text: str) -> tuple[str, str, str, bool]:
+    """Translate text to English. Returns (translated, lang_code, lang_name, was_translated)."""
+    if not text or not text.strip():
+        return (text, "en", "English", False)
+
+    lang_code, lang_name = _detect_language(text)
+
+    sample = text[:4500]  # Google Translate 5000-char limit
+    has_non_ascii = any(ord(ch) > 127 for ch in sample)
+    if lang_code == "en" and not has_non_ascii:
+        return (text, "en", "English", False)
+
+    try:
+        res = translator.translate(sample)
+        translated = res if res else sample
+
+        # If auto-detect path fails to translate despite non-English detection,
+        # retry with an explicit source language code.
+        if lang_code != "en" and translated.strip().lower() == sample.strip().lower():
+            try:
+                translated2 = GoogleTranslator(source=lang_code, target="en").translate(sample)
+                if translated2:
+                    translated = translated2
+            except Exception:
+                pass
+
+        was_translated = translated.strip().lower() != sample.strip().lower()
+        return (translated, lang_code, lang_name, was_translated)
+    except Exception as e:
+        logger.warning(f"Translation error: {e}")
+        return (text, lang_code, lang_name, False)
+
 import requests
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,8 +156,8 @@ except ImportError:
 
 _load_env_file()
 
-from config import (API_HOST, API_PORT, CORS_ORIGINS, PHASE04_MODELS,
-                    PROJECT_NAME, PROJECT_VERSION)
+from config import (API_HOST, API_PORT, CORS_ORIGINS, PHASE03_RESULTS,
+                    PHASE04_MODELS, PROJECT_NAME, PROJECT_VERSION)
 from backend.schemas import (AttentionData, BatchPredictRequest, HealthResponse,
                              HistoryItem, MetricsResponse, PredictRequest,
                              PredictResponse, SentimentResult)
@@ -116,7 +224,9 @@ def health():
 @app.post("/api/predict", response_model=PredictResponse, tags=["inference"])
 def predict(req: PredictRequest):
     request_id = str(uuid4())
-    text = req.text
+    original_text = req.text
+    text, src_code, src_name, was_translated = _ensure_english(original_text)
+
     requested = set(req.models or ["all"])
     include_all = "all" in requested
 
@@ -135,7 +245,7 @@ def predict(req: PredictRequest):
     attn_data = AttentionData(**attn) if attn and (include_all or "bilstm" in requested) else None
 
     response = PredictResponse(
-        text=text,
+        text=original_text,
         request_id=request_id,
         vader=to_result("vader"),
         lr=to_result("lr"),
@@ -143,11 +253,15 @@ def predict(req: PredictRequest):
         svm=to_result("svm"),
         bilstm=to_result("bilstm"),
         attention=attn_data,
+        source_language=src_code,
+        source_language_name=src_name,
+        translated_text=text if was_translated else None,
+        was_translated=was_translated,
     )
 
     HISTORY.append(HistoryItem(
         request_id=request_id,
-        text=text[:120],
+        text=original_text[:120],
         vader=response.vader,
         lr=response.lr,
         rf=response.rf,
@@ -190,6 +304,28 @@ def metrics():
 @app.get("/api/history", response_model=typing.List[HistoryItem], tags=["meta"])
 def history():
     return list(HISTORY)
+
+
+@app.get("/api/accuracy-scaling", tags=["meta"])
+def accuracy_scaling():
+    """Accuracy scaling metrics across increasing train/test dataset sizes."""
+    csv_path = PHASE03_RESULTS / "accuracy_scaling_data.csv"
+    if not csv_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Accuracy scaling data not generated. Run phase_03_classical_models/07_accuracy_scaling.py",
+        )
+    import pandas as pd
+    df = pd.read_csv(csv_path)
+    threshold_path = PHASE03_RESULTS / "accuracy_scaling_thresholds.csv"
+    thresholds = []
+    if threshold_path.exists():
+        thresholds = pd.read_csv(threshold_path).to_dict(orient="records")
+    return {
+        "rows": df.to_dict(orient="records"),
+        "thresholds": thresholds,
+        "updated_at": datetime.fromtimestamp(csv_path.stat().st_mtime).isoformat(),
+    }
 
 
 def _normalize_hashtag(hashtag: str) -> str:
@@ -513,7 +649,8 @@ async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: Optiona
 
                 results = []
                 for tweet in tweets[:limit]:
-                    raw = model_manager.predict_all(tweet.text)
+                    translated_text, _, _, _ = _ensure_english(tweet.text)
+                    raw = model_manager.predict_all(translated_text)
                     results.append({
                         "id": tweet.id,
                         "text": tweet.text,
@@ -550,7 +687,7 @@ async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: Optiona
         return _fallback_hashtag_eval(hashtag, n, reason)
 
     params = {
-        "query": f"#{tag} -is:retweet lang:en",
+        "query": f"#{tag} -is:retweet",
         "max_results": 10,
         "sort_order": "recency",
         "tweet.fields": "created_at,public_metrics,author_id,lang",
@@ -587,7 +724,8 @@ async def _live_twitter_hashtag_eval(hashtag: str, n: int, header_token: Optiona
 
     results = []
     for tweet in tweets[:limit]:
-        raw = model_manager.predict_all(tweet["text"])
+        translated_text, _, _, _ = _ensure_english(tweet["text"])
+        raw = model_manager.predict_all(translated_text)
         author = users.get(tweet.get("author_id"), {})
         username = author.get("username")
         results.append({
@@ -659,4 +797,4 @@ if FRONTEND_DIST.exists():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host=API_HOST, port=API_PORT, reload=True)
+    uvicorn.run("backend.main:app", host=API_HOST, port=API_PORT, reload=False)
