@@ -31,11 +31,14 @@ jobs:
           import os
 
           api = HfApi(token=os.environ["HF_TOKEN"])
+
+          # Upload all files (add/update), delete files removed from GitHub
           api.upload_folder(
-              folder_path=".",
-              repo_id="rajvivan/ML-Sentiment-Analysis-Social-Media",
-              repo_type="space",
-              ignore_patterns=[".git/*", ".github/*", "__pycache__/*", "*.pyc"],
+                folder_path=".",
+                repo_id="rajvivan/ML-Sentiment-Analysis-Social-Media",
+                repo_type="space",
+                ignore_patterns=[".git/*", ".github/*", "__pycache__/*", "*.pyc"],
+                delete_patterns=["*"],  # delete any HF file not present in GitHub
           )
           print("Sync complete!")
           EOF
