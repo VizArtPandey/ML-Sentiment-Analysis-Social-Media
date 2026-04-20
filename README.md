@@ -1,11 +1,4 @@
----
-title: ML Sentiment Analysis Social Media
-emoji: 🚀
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-pinned: false
----
+
 
 # Sentiment Analysis on Social Media — End-to-End ML Project
 
