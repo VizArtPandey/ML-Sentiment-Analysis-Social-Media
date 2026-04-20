@@ -48,10 +48,28 @@ def _load_bilstm():
         print(f"BiLSTM unavailable: {exc}")
         return None, None
 
-    path = BILSTM_MODEL_PATH
-    if not path.exists():
+    # Keep HF behavior aligned with local backend: prefer .keras, then .h5 fallback.
+    keras_path = BILSTM_MODEL_PATH.with_suffix(".keras")
+    h5_path = BILSTM_MODEL_PATH.with_suffix(".h5")
+    model_paths = [path for path in (keras_path, h5_path) if path.exists()]
+    if not model_paths:
+        print("BiLSTM model missing (.keras/.h5 not found).")
         return None, None
-    model = tf.keras.models.load_model(str(path), custom_objects={"AttentionLayer": AttentionLayer})
+
+    model = None
+    for model_path in model_paths:
+        try:
+            model = tf.keras.models.load_model(
+                str(model_path),
+                custom_objects={"AttentionLayer": AttentionLayer},
+            )
+            print(f"BiLSTM loaded from {model_path.name}")
+            break
+        except Exception as exc:
+            print(f"BiLSTM load failed for {model_path.name}: {exc}")
+
+    if model is None:
+        return None, None
 
     tokenizer_path = PHASE02_ARTIFACTS / "tokenizer.pkl"
     tokenizer = joblib.load(tokenizer_path) if tokenizer_path.exists() else None

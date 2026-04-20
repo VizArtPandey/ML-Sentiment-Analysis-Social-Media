@@ -28,6 +28,7 @@ ENV/
 !phase_03_classical_models/results/svm_model.joblib
 !phase_03_classical_models/results/ambiguity_calibrator.joblib
 !phase_04_rnn_bilstm/saved_models/bilstm_best.keras
+!phase_04_rnn_bilstm/saved_models/bilstm_best.h5
 *.bin
 *.pt
 *.pth
