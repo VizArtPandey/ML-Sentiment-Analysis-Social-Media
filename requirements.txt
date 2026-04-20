@@ -6,8 +6,8 @@ nltk==3.8.1
 vaderSentiment==3.3.2
 gensim==4.3.3
 wordcloud==1.9.3
-tensorflow>=2.13.0
-keras
+tensorflow>=2.13.0,<2.16
+keras<3
 datasets>=2.19.1
 transformers>=4.40.1
 huggingface-hub>=0.23.0
