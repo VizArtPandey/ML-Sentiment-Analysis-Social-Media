@@ -1,3 +1,8 @@
+---
+title: ML Sentiment Analysis Social Media
+sdk: docker
+app_port: 7860
+---
 
 
 # Sentiment Analysis on Social Media — End-to-End ML Project
