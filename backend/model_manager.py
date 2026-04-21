@@ -122,6 +122,22 @@ def models_loaded() -> dict[str, bool]:
     return {k: v is not None for k, v in _models.items()}
 
 
+def _normalize_probabilities(values) -> np.ndarray:
+    """Return a safe probability vector in [0, 1] that sums to 1."""
+    probs = np.asarray(values, dtype=float).reshape(-1)
+    if probs.size == 0:
+        return probs
+
+    probs = np.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
+    probs = np.clip(probs, 0.0, None)
+
+    total = float(probs.sum())
+    if total <= 0.0:
+        return np.full(probs.shape, 1.0 / probs.size, dtype=float)
+
+    return probs / total
+
+
 def predict_vader(text: str) -> dict | None:
     analyzer = _models.get("vader")
     if not analyzer:
@@ -163,7 +179,7 @@ def _predict_sklearn_model(text: str, model) -> dict | None:
     if not model:
         return None
     clean = preprocess_social_text(text)
-    proba = model.predict_proba([clean])[0]
+    proba = _normalize_probabilities(model.predict_proba([clean])[0])
     idx   = int(proba.argmax())
     return {
         "label": str(model.classes_[idx]),
@@ -213,10 +229,10 @@ def predict_bilstm(text: str) -> tuple[dict | None, dict | None]:
     weights = None
     if attn_model is not None:
         proba, weights = attn_model.predict(padded, verbose=0)
-        proba = proba[0]
+        proba = _normalize_probabilities(proba[0])
         weights = weights[0]       # (MAX_SEQ_LEN, 1)
     else:
-        proba = model.predict(padded, verbose=0)[0]
+        proba = _normalize_probabilities(model.predict(padded, verbose=0)[0])
 
     idx = int(proba.argmax())
     tokens  = clean.split()[:MAX_SEQ_LEN]

@@ -51,7 +51,8 @@ export default function ResultCard({ modelName, label, confidence, scores }) {
     color: "text-gray-600",
     bg: "bg-gray-50",
   };
-  const confPct = ((confidence ?? 0) * 100).toFixed(1);
+  const safeConfidence = Math.min(1, Math.max(0, Number(confidence ?? 0)));
+  const confPct = (safeConfidence * 100).toFixed(1);
 
   return (
     <div
